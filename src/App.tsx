@@ -16,20 +16,15 @@ import {
   type Act,
 } from './festivals';
 import { buildPoster, loadEdits, saveEdits, type PosterEdits } from './posterEdits';
-import {
-  fetchLastfmProfile,
-  forgetLastfmUser,
-  LASTFM_PERIODS,
-  LastfmError,
-  lastfmConfigured,
-  savedLastfmUser,
-  type LastfmPeriod,
-} from './sources/lastfm';
+import { exportWindow, forgetExport } from './sources/exportWindows';
+import { fetchLastfmProfile, forgetLastfmUser, LastfmError, lastfmConfigured, savedLastfmUser } from './sources/lastfm';
+import { isListeningPeriod, type ListeningPeriod } from './sources/periods';
 import { SpotifyError } from './spotify/api';
 import { handleRedirect, isConfigured, isLoggedIn, login, logout, redirectUri } from './spotify/auth';
 import {
   clearCachedProfile,
   fetchProfile,
+  saveProfile,
   loadCachedProfile,
   type ListeningProfile,
   type Progress,
@@ -111,7 +106,7 @@ const festivalList = new Intl.ListFormat('en-GB', { type: 'conjunction' }).forma
   ...new Set(festivals.map((f) => f.name)),
 ]);
 const SITE_KEY = 'festify.site';
-const PERIOD_KEY = 'festify.lastfm.period';
+const PERIOD_KEY = 'festify.period';
 
 export default function App() {
   const [state, setState] = useState<State>({ kind: 'starting' });
@@ -147,17 +142,18 @@ export default function App() {
   );
 
   // Last.fm users can choose how far back to look (all time by default).
-  const [lastfmPeriod, setLastfmPeriod] = useState<LastfmPeriod>(() => {
-    const saved = read(PERIOD_KEY);
-    return LASTFM_PERIODS.some((p) => p.id === saved) ? (saved as LastfmPeriod) : 'overall';
+  // Last.fm and data-upload users can choose how far back to look (all time by default).
+  const [listeningPeriod, setListeningPeriod] = useState<ListeningPeriod>(() => {
+    const saved = read(PERIOD_KEY) ?? read('festify.lastfm.period'); // (older key)
+    return isListeningPeriod(saved) ? saved : 'overall';
   });
 
   // Read through a ref so Refresh / retry always use the current choice.
-  const periodRef = useRef(lastfmPeriod);
-  periodRef.current = lastfmPeriod;
+  const periodRef = useRef(listeningPeriod);
+  periodRef.current = listeningPeriod;
 
   const loadLastfm = useCallback(
-    (username: string, force = false, period: LastfmPeriod = periodRef.current) => {
+    (username: string, force = false, period: ListeningPeriod = periodRef.current) => {
       const cached = force ? null : loadCachedProfile();
       if (
         cached?.source === 'lastfm' &&
@@ -276,6 +272,7 @@ export default function App() {
   const signOut = () => {
     logout();
     forgetLastfmUser();
+    forgetExport();
     clearCachedProfile();
     setState({ kind: 'signedOut' });
   };
@@ -362,7 +359,7 @@ export default function App() {
               run(async (p) => {
                 p('Opening your file…', 0.05);
                 const { importSpotifyExport } = await import('./sources/spotifyExport');
-                return importSpotifyExport(files, p);
+                return importSpotifyExport(files, periodRef.current, p);
               }, true)
             }
             onDemo={() => setState({ kind: 'ready', profile: demoProfile(lineup ?? []) })}
@@ -467,11 +464,30 @@ export default function App() {
                 failed: suggested.failed && suggested.key === suggestKey,
                 count: activeSuggestions.filter((s) => poster.acts.includes(s)).length,
               }}
-              lastfmPeriod={profile?.source === 'lastfm' ? ((profile.period as LastfmPeriod) ?? 'overall') : undefined}
-              onLastfmPeriod={(period) => {
-                setLastfmPeriod(period);
+              period={
+                profile?.source === 'lastfm' || profile?.source === 'export'
+                  ? isListeningPeriod(profile.period)
+                    ? profile.period
+                    : 'overall'
+                  : undefined
+              }
+              onPeriod={(period) => {
+                setListeningPeriod(period);
                 write(PERIOD_KEY, period);
                 if (profile?.source === 'lastfm') loadLastfm(profile.userId, true, period);
+                if (profile?.source === 'export') {
+                  // Every window was built at upload, so this is instant.
+                  const chosen = exportWindow(period);
+                  if (chosen) {
+                    saveProfile(chosen);
+                    setState({ kind: 'ready', profile: chosen });
+                  } else {
+                    setState({
+                      kind: 'signedOut',
+                      error: 'To change the listening window, upload your Spotify data again.',
+                    });
+                  }
+                }
               }}
               onToggleSuggestions={(on) => {
                 setSuggestOn(on);

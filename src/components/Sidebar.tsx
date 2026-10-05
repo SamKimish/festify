@@ -4,7 +4,7 @@ import { reasonsFor, type CuratedAct } from '../curate';
 import type { Act, Festival } from '../festivals';
 import { hasEdits, type PosterEdits } from '../posterEdits';
 import { hasScope, login } from '../spotify/auth';
-import { LASTFM_PERIODS, type LastfmPeriod } from '../sources/lastfm';
+import { LISTENING_PERIODS, type ListeningPeriod } from '../sources/periods';
 import { createPosterPlaylist } from '../spotify/playlist';
 import type { ListeningProfile } from '../spotify/profile';
 import { ActLabel } from './ActLabel';
@@ -20,9 +20,9 @@ interface Props {
   onEdits: (edits: PosterEdits) => void;
   suggestions: { available: boolean; enabled: boolean; loading: boolean; count: number; failed: boolean };
   onToggleSuggestions: (on: boolean) => void;
-  /** Last.fm users only: the listening window, and changing it. */
-  lastfmPeriod?: LastfmPeriod;
-  onLastfmPeriod: (period: LastfmPeriod) => void;
+  /** Last.fm and data uploads only: the listening window, and changing it. */
+  period?: ListeningPeriod;
+  onPeriod: (period: ListeningPeriod) => void;
   posterRef: RefObject<HTMLDivElement | null>;
   onSelect: (act: CuratedAct) => void;
 }
@@ -64,14 +64,14 @@ export function Sidebar(props: Props) {
         )}
       </div>
 
-      {props.lastfmPeriod && (
+      {props.period && (
         <label className="period-picker">
           <span>Listening from</span>
           <select
-            value={props.lastfmPeriod}
-            onChange={(e) => props.onLastfmPeriod(e.target.value as LastfmPeriod)}
+            value={props.period}
+            onChange={(e) => props.onPeriod(e.target.value as ListeningPeriod)}
           >
-            {LASTFM_PERIODS.map((p) => (
+            {LISTENING_PERIODS.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.label}
               </option>

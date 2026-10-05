@@ -9,6 +9,9 @@ become the headliners, and anyone you've never played is left off.
 - **Last.fm username:** public scrobble history with real play counts, no login (`src/sources/lastfm.ts`).
 - **Spotify data export:** the .zip from Spotify's "Download your data", read entirely in the browser
   (`src/sources/spotifyExport.ts`). Works with both "Account data" and "Extended streaming history".
+
+Last.fm and data-upload users can pick a listening window (all time, last 12/6/3 months, last month). Uploads build
+every window at once, counted back from the newest play in the file, so switching is instant.
 - **Demo data:** made-up listening, for trying the posters.
 
 ## Extras

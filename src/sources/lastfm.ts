@@ -1,28 +1,20 @@
 import type { ListeningProfile, Progress, TimeRange } from '../spotify/profile';
 import { saveProfile } from '../spotify/profile';
 import { ProfileBuilder } from './builder';
+import { PERIOD_DAYS, type ListeningPeriod } from './periods';
 
 const KEY = import.meta.env.VITE_LASTFM_API_KEY as string | undefined;
 const API = 'https://ws.audioscrobbler.com/2.0/';
 const USER_KEY = 'festify.lastfm';
 /** How many top artists / tracks to read per period. */
 const TOP_SIZE = 200;
-/** How far back to look, as offered in the sidebar. */
-export type LastfmPeriod = 'overall' | '12month' | '6month' | '3month' | '1month';
-export const LASTFM_PERIODS: { id: LastfmPeriod; label: string }[] = [
-  { id: 'overall', label: 'All time' },
-  { id: '12month', label: 'Last 12 months' },
-  { id: '6month', label: 'Last 6 months' },
-  { id: '3month', label: 'Last 3 months' },
-  { id: '1month', label: 'Last month' },
-];
 
 /**
  * Last.fm periods standing in for Spotify's short / medium / long term, for each
  * choice: the whole window, plus shorter ones inside it so recent listening
  * still counts for a bit more.
  */
-const LADDERS: Record<LastfmPeriod, Partial<Record<TimeRange, string>>> = {
+const LADDERS: Record<ListeningPeriod, Partial<Record<TimeRange, string>>> = {
   overall: { short_term: '1month', medium_term: '6month', long_term: 'overall' },
   '12month': { short_term: '1month', medium_term: '6month', long_term: '12month' },
   '6month': { short_term: '1month', medium_term: '3month', long_term: '6month' },
@@ -37,7 +29,7 @@ const PERIOD_LABEL: Record<string, string> = {
   '12month': 'last 12 months',
   overall: 'all time',
 };
-const PERIOD_DAYS: Record<LastfmPeriod, number> = { overall: Infinity, '12month': 365, '6month': 182, '3month': 91, '1month': 30 };
+
 
 export const lastfmConfigured = Boolean(KEY);
 
@@ -93,7 +85,7 @@ export function forgetLastfmUser() {
 /** Builds a listening profile from a public Last.fm account (no login needed). */
 export async function fetchLastfmProfile(
   username: string,
-  period: LastfmPeriod,
+  period: ListeningPeriod,
   onProgress: Progress,
 ): Promise<ListeningProfile> {
   onProgress('Finding your Last.fm profile…', 0);
