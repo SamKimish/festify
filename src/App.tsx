@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { toPng } from 'html-to-image';
 import { ArtistModal } from './components/ArtistModal';
 import { Poster } from './components/Poster';
+import { PosterActions } from './components/PosterActions';
 import { curate, reasonsFor, type CuratedAct } from './curate';
 import { demoProfile } from './demo';
 import { festivals } from './festivals';
@@ -36,7 +36,6 @@ export default function App() {
   const [state, setState] = useState<State>({ kind: 'starting' });
   const [festivalId, setFestivalId] = useState(storedFestival);
   const [selected, setSelected] = useState<CuratedAct | null>(null);
-  const [downloading, setDownloading] = useState(false);
   const posterRef = useRef<HTMLDivElement>(null);
   const festival = festivals.find((f) => f.id === festivalId) ?? festivals[0];
 
@@ -87,27 +86,6 @@ export default function App() {
     logout();
     clearCachedProfile();
     setState({ kind: 'signedOut' });
-  };
-
-  const download = async () => {
-    if (!posterRef.current) return;
-    setDownloading(true);
-    try {
-      const url = await toPng(posterRef.current, {
-        pixelRatio: 2,
-        cacheBust: true,
-        filter: (node) => !(node instanceof HTMLElement && node.classList.contains('measure')),
-      });
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `festify-${festival.id}.png`;
-      a.click();
-    } catch (e) {
-      console.error(e);
-      alert("Sorry, the poster couldn't be saved as an image.");
-    } finally {
-      setDownloading(false);
-    }
   };
 
   return (
@@ -221,11 +199,13 @@ export default function App() {
             <aside className="sidebar">
               <div className="summary">
                 <strong>{acts.length}</strong> of {festival.lineup.length} acts on your poster
-                <div className="summary-actions">
-                  <button type="button" className="primary" onClick={download} disabled={downloading}>
-                    {downloading ? 'Saving…' : 'Download poster'}
-                  </button>
-                </div>
+                <PosterActions
+                  posterRef={posterRef}
+                  version={`${festival.id}|${state.profile.userId}|${state.profile.fetchedAt}`}
+                  filename={`my-${festival.id}-lineup.png`}
+                  width={festival.width}
+                  shareText={`My personal ${festival.name} lineup, made with Festify:`}
+                />
               </div>
               {state.profile.warnings.length > 0 && (
                 <p className="warning">
