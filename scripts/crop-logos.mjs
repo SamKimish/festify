@@ -2,7 +2,8 @@
 //
 //   node scripts/crop-logos.mjs festival-sources/<festival>
 //
-// Reads blank.webp, poster.webp and logos.config.json ({ logos: { slug: [x0, y0, x1, y1] } })
+// Reads blank.webp, poster.webp and logos.config.json ({ logos: { slug: [x0, y0, x1, y1] },
+// overrides?: { slug: "file.png" } }; an override is a supplied image used instead of the crop)
 // from that folder and writes public/festivals/<festival>/logos/<slug>.svg plus
 // src/festivals/<festival>.logos.json ({ slug: { width, height } }) for the festival definition.
 import potrace from 'potrace';
@@ -17,7 +18,7 @@ if (!dir) {
   process.exit(1);
 }
 const outDir = join('public', 'festivals', basename(dir), 'logos');
-const { logos } = JSON.parse(readFileSync(join(dir, 'logos.config.json'), 'utf8'));
+const { logos, overrides = {} } = JSON.parse(readFileSync(join(dir, 'logos.config.json'), 'utf8'));
 
 const load = async (p) => {
   const { data, info } = await sharp(p).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
@@ -33,17 +34,32 @@ const trace = promisify(potrace.trace);
 rmSync(outDir, { recursive: true, force: true });
 mkdirSync(outDir, { recursive: true });
 const sizes = {};
-for (const [slug, [x0, y0, x1, y1]] of Object.entries(logos)) {
+/** Greyscale pixels of a supplied logo image, flattened onto white. */
+async function fromFile(file) {
+  const { data, info } = await sharp(join(dir, file))
+    .flatten({ background: '#ffffff' })
+    .greyscale()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  return { grey: data, cw: info.width, ch: info.height };
+}
+
+/** Greyscale pixels of a box on the poster: ink only where the blank artwork is white. */
+function fromPoster([x0, y0, x1, y1]) {
   const cw = x1 - x0 + 1;
   const ch = y1 - y0 + 1;
   const grey = Buffer.alloc(cw * ch);
   for (let y = 0; y < ch; y++) {
     for (let x = 0; x < cw; x++) {
       const i = (y0 + y) * blank.w + (x0 + x);
-      // Ink only where the blank artwork is white (the reels), else paper.
       grey[y * cw + x] = lum(blank.data, i) > 200 ? Math.round(lum(poster.data, i)) : 255;
     }
   }
+  return { grey, cw, ch };
+}
+
+for (const [slug, box] of Object.entries(logos)) {
+  const { grey, cw, ch } = overrides[slug] ? await fromFile(overrides[slug]) : fromPoster(box);
   const upscaled = await sharp(grey, { raw: { width: cw, height: ch, channels: 1 } })
     .resize(cw * UPSCALE, ch * UPSCALE, { kernel: 'lanczos3' })
     .png()
