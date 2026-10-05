@@ -1,182 +1,214 @@
 {
-  "comment": "Logo boxes [x0, y0, x1, y1] in poster.webp pixels. Generated with scripts/extract-logos.mjs (GROW_X=7 GROW_Y=1), pieces merged by hand. Re-crop with: node scripts/crop-logos.mjs festival-sources/slam-dunk-2027",
-  "logos": {
-    "bowling-for-soup": [
-      255,
-      237,
-      592,
-      274
-    ],
-    "simple-plan": [
-      615,
-      232,
-      780,
-      279
-    ],
-    "reel-big-fish": [
-      251,
-      285,
-      498,
-      340
-    ],
-    "less-than-jake": [
-      515,
-      292,
-      772,
-      330
-    ],
-    "the-interrupters": [
-      367,
-      343,
-      566,
-      377
-    ],
-    "grade-2": [
-      580,
-      347,
-      649,
-      373
-    ],
-    "killswitch-engage": [
-      241,
-      446,
-      427,
-      568
-    ],
-    "beartooth": [
-      441,
-      447,
-      645,
-      492
-    ],
-    "wage-war": [
-      659,
-      449,
-      795,
-      493
-    ],
-    "the-amity-affliction": [
-      479,
-      492,
-      608,
-      526
-    ],
-    "erra": [
-      671,
-      503,
-      782,
-      526
-    ],
-    "melrose-avenue": [
-      486,
-      532,
-      602,
-      570
-    ],
-    "from-ashes-to-new": [
-      673,
-      538,
-      780,
-      563
-    ],
-    "sleeping-with-sirens": [
-      340,
-      642,
-      485,
-      706
-    ],
-    "the-used": [
-      503,
-      641,
-      700,
-      710
-    ],
-    "the-maine": [
-      307,
-      713,
-      473,
-      738
-    ],
-    "we-the-kings": [
-      501,
-      716,
-      729,
-      738
-    ],
-    "the-academy-is": [
-      382,
-      747,
-      556,
-      775
-    ],
-    "cute-is-what-we-aim-for": [
-      582,
-      745,
-      645,
-      775
-    ],
-    "the-front-bottoms": [
-      386,
-      844,
-      658,
-      887
-    ],
-    "four-year-strong": [
-      247,
-      893,
-      349,
-      949
-    ],
-    "trophy-eyes": [
-      376,
-      898,
-      466,
-      943
-    ],
-    "knuckle-puck": [
-      493,
-      901,
-      656,
-      941
-    ],
-    "overgrown": [
-      678,
-      905,
-      731,
-      936
-    ],
-    "love-rarely": [
-      755,
-      909,
-      799,
-      932
-    ],
-    "hot-milk": [
-      235,
-      1014,
-      377,
-      1082
-    ],
-    "mouth-culture": [
-      405,
-      1030,
-      540,
-      1062
-    ],
-    "as-december-falls": [
-      565,
-      1026,
-      697,
-      1072
-    ],
-    "redhook": [
-      722,
-      1034,
-      804,
-      1061
-    ]
-  },
-  "overrides": {
-    "reel-big-fish": "reel-big-fish.png"
-  }
+    "comment": "Logo boxes [x0, y0, x1, y1] in poster.webp pixels. Generated with scripts/extract-logos.mjs (GROW_X=7 GROW_Y=1), pieces merged by hand. Re-crop with: node scripts/crop-logos.mjs festival-sources/slam-dunk-2027",
+    "logos":
+    {
+        "bowling-for-soup":
+        [
+            255,
+            237,
+            592,
+            274
+        ],
+        "simple-plan":
+        [
+            615,
+            232,
+            780,
+            279
+        ],
+        "reel-big-fish":
+        [
+            251,
+            285,
+            498,
+            340
+        ],
+        "less-than-jake":
+        [
+            515,
+            292,
+            772,
+            330
+        ],
+        "the-interrupters":
+        [
+            367,
+            343,
+            566,
+            377
+        ],
+        "grade-2":
+        [
+            580,
+            347,
+            649,
+            373
+        ],
+        "killswitch-engage":
+        [
+            241,
+            446,
+            427,
+            568
+        ],
+        "beartooth":
+        [
+            441,
+            447,
+            645,
+            492
+        ],
+        "wage-war":
+        [
+            659,
+            449,
+            795,
+            493
+        ],
+        "the-amity-affliction":
+        [
+            479,
+            492,
+            608,
+            526
+        ],
+        "erra":
+        [
+            671,
+            503,
+            782,
+            526
+        ],
+        "melrose-avenue":
+        [
+            486,
+            532,
+            602,
+            570
+        ],
+        "from-ashes-to-new":
+        [
+            673,
+            538,
+            780,
+            563
+        ],
+        "sleeping-with-sirens":
+        [
+            340,
+            642,
+            485,
+            706
+        ],
+        "the-used":
+        [
+            503,
+            641,
+            700,
+            710
+        ],
+        "the-maine":
+        [
+            307,
+            713,
+            473,
+            738
+        ],
+        "we-the-kings":
+        [
+            501,
+            716,
+            729,
+            738
+        ],
+        "the-academy-is":
+        [
+            382,
+            747,
+            556,
+            775
+        ],
+        "cute-is-what-we-aim-for":
+        [
+            582,
+            745,
+            645,
+            775
+        ],
+        "the-front-bottoms":
+        [
+            386,
+            844,
+            658,
+            887
+        ],
+        "four-year-strong":
+        [
+            247,
+            893,
+            349,
+            949
+        ],
+        "trophy-eyes":
+        [
+            376,
+            898,
+            466,
+            943
+        ],
+        "knuckle-puck":
+        [
+            493,
+            901,
+            656,
+            941
+        ],
+        "overgrown":
+        [
+            678,
+            905,
+            731,
+            936
+        ],
+        "love-rarely":
+        [
+            755,
+            909,
+            799,
+            932
+        ],
+        "hot-milk":
+        [
+            235,
+            1014,
+            377,
+            1082
+        ],
+        "mouth-culture":
+        [
+            405,
+            1030,
+            540,
+            1062
+        ],
+        "as-december-falls":
+        [
+            565,
+            1026,
+            697,
+            1072
+        ],
+        "redhook":
+        [
+            722,
+            1034,
+            804,
+            1061
+        ]
+    },
+    "overrides":
+    {
+        "four-year-strong": "four-year-strong.png",
+        "reel-big-fish": "reel-big-fish.png"
+    }
 }
