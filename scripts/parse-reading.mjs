@@ -77,7 +77,8 @@ let day = '';
 let stage = '';
 for (const raw of readFileSync(input, 'utf8').split(/\r?\n/)) {
   const line = raw.trim();
-  if (!line) continue;
+  // Blank lines and # comments (e.g. noting where a section came from) are skipped.
+  if (!line || line.startsWith('#')) continue;
   const set = line.match(SET_LINE);
   const dayMatch = line.match(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b/i);
   if (dayMatch && !set) {

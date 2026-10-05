@@ -1,3 +1,109 @@
+# Leeds 2026 timetable.
+# Friday–Sunday on The Grid, The Gallery, The Warehouse and The Ballroom: official
+# set times (supplied by Sam).
+Friday August 28
+The Grid
+54 Ultra – 12.15pm-1.10pm
+Dylan John Thomas – 1.30pm-2.25pm
+Arthur Hill – 2.45pm-3.40pm
+Blossoms – 3.55pm-5.10pm
+ROLE MODEL – 5.25pm-6.40pm
+Florence + The Machine – 7.20pm-8.35pm
+Chase & Status (Live) – 9.30pm-11pm
+The Gallery
+Mulaa Joans – 12pm-12.35pm
+After – 12.50pm-1.25pm
+Holly Humberstone – 1.40pm-2.25pm
+Julia Wolf – 2.45pm-3.30pm
+Duke Dumont – 4pm-5pm
+The K's – 5.30pm-6.30pm
+KETTAMA – 7.15pm-8.15pm
+KNEECAP – 9.40pm-10.40pm
+The Warehouse
+[IVY] – 12.25pm-1.25pm
+Saint Ludo – 1.25pm-2.55pm
+Hamdi – 2.55pm-3.55pm
+NOTION – 3.55pm-5.25pm
+SOTA – 5.25pm-6.25pm
+Hedex – 6.25pm-7.25pm
+Hybrid Minds – 7.25pm-8.25pm
+The Ballroom
+Betty – 12.40pm-1.25pm
+Westside Cowboy – 1.45pm-2.30pm
+dexter in the newsagent – 2.55pm-3.40pm
+The Clause – 4.10pm-5.10pm
+Whatmore – 5.45pm-6.45pm
+Wisp – 7.20pm-8.20pm
+Paris Paloma – 9.30pm-10.30pm
+Saturday August 29
+The Grid
+Beth McCarthy – 12.30pm-1.15pm
+Keo – 1.25pm-2.20pm
+James Marriott – 2.35pm-3.30pm
+Declan McKenna – 3.45pm-5pm
+Skepta – 5.15pm-6.30pm
+Charli xcx – 7.10pm-8.25pm
+Fontaines DC – 9.20pm-10.50pm
+The Gallery
+JD Cliffe – 12pm-12.30pm
+DJ EJ – 12.30pm-1.15pm
+Rose Gray – 1.30pm-2.15pm
+ADÉLA – 2.45pm-3.30pm
+Skye Newman – 4pm-4.45pm
+Geese – 5.20pm-6.20pm
+Sinn6r – 7.20pm-8.20pm
+4am Kru – 9.05pm-10.05pm
+The Warehouse
+Meeshy – 12pm-1.15pm
+Djammin – 1.15pm-2.30pm
+Julian Fijma – 2.30pm-3.30pm
+Omar+ – 3.30pm-5pm
+Locky – 5pm-7pm
+ALISHA – 7pm-9.05pm
+Skepta b2b East End Dubs – 9.05pm-10.05pm
+The Ballroom
+Bleech 9:3 – 12.20pm-1.05pm
+Cardinals – 1.30pm-2.15pm
+Clementine Douglas – 2.40pm-3.25pm
+Overpass – 4pm-5pm
+Florence Road – 5.30pm-6.30pm
+unpeople – 7.15pm-8.15pm
+YT – 9.15pm-10.15pm
+Sunday August 30
+The Grid
+Absolutely – 12.05pm-1.20pm
+Slayyyter – 1.35pm-2.30pm
+Maisie Peters – 3pm-3.55pm
+JADE – 4.15pm-5.30pm
+sombr – 5.50pm-7.05pm
+RAYE – 7.35pm-8.50pm
+Dave – 9.35pm-11.05pm
+The Gallery
+M60 – 12pm-12.35pm
+Say Now – 12.45pm-1.30pm
+Clara La San – 1.50pm-2.35pm
+Kingfishr – 3.05pm-3.50pm
+Niko B – 4.15pm-5.15pm
+Nine Vicious – 5.50pm-6.50pm
+Jamie Webster – 7.20pm-8.20pm
+Josh Baker – 9.25pm-10.25pm
+The Warehouse
+JACK MARLOW – 12pm-1.30pm
+Silva Bumpa – 1.30pm-2.45pm
+IN PARALLEL – 2.45pm-4pm
+Riordan – 4pm-5.30pm
+Mall Grab – 5.30pm-7.15pm
+Rossi. – 7.15pm-8.15pm
+The Ballroom
+Garage Flower – 12.30pm-1.15pm
+The North – 1.45pm-2.30pm
+Basht. – 3pm-3.45pm
+bar italia – 4.15pm-5.15pm
+The Lilacs – 5.45pm-6.45pm
+Speed – 7.40pm-8.40pm
+
+# Thursday, The Canopy, LS23 and the Piccadilly Party aren't in the official list
+# above, so they come from festivalpilot.app (third-party: worth re-checking).
 Thursday August 27
 The Grid
 Arkayla – 19:00-19:30
@@ -11,39 +117,6 @@ Lens – 02:00-03:00
 Piccadilly Party
 Beefy Melons – 02:00-03:00
 Friday August 28
-The Grid
-54 Ultra – 12:15-13:00
-Dylan John Thomas – 13:30-14:15
-Arthur Hill – 14:10-15:25
-Blossoms – 15:35-16:35
-ROLE MODEL – 17:25-18:25
-Florence + The Machine – 19:20-20:50
-Chase & Status Live – 21:30-23:00
-The Gallery presented by Budweiser
-Mulaa Joans – 12:00-12:30
-After – 12:50-13:20
-Holly Humberstone – 13:40-14:20
-Julia Wolf – 14:15-15:25
-Duke Dumont – 16:00-17:00
-The K's – 17:00-18:30
-Kettama – 19:15-20:40
-KNEECAP – 21:40-22:50
-The Warehouse
-[IVY] – 12:30-13:25
-Saint Ludo – 13:25-14:25
-Hamdi – 14:45-15:55
-Notion – 15:55-17:25
-Sota – 17:25-18:25
-Hedex – 18:25-19:25
-Hybrid Minds – 19:25-20:40
-The Ballroom
-Betty – 12:40-13:10
-Westside Cowboy – 13:45-14:25
-dexter in the newsagent – 14:55-15:50
-The Clause – 16:10-17:10
-Whatmore – 17:45-18:45
-Bassvictim – 19:20-20:20
-Paris Paloma – 21:30-22:30
 The Canopy
 Alex Spencer – 12:00-12:20
 Shes Green – 12:40-13:00
@@ -63,39 +136,6 @@ Doktored – 00:00-01:00
 Danny Oliver – 02:00-03:00
 Beefy Melons – 03:00-05:00
 Saturday August 29
-The Grid
-Beth McCarthy – 12:40-13:00
-Keo – 13:35-14:10
-James Marriott – 14:45-15:20
-Declan McKenna – 15:45-16:45
-Skepta – 17:45-18:45
-Charli XCX – 19:10-20:40
-Fontaines D.C. – 21:20-22:50
-The Gallery presented by Budweiser
-JD Cliffe – 12:00-12:20
-DJ EJ – 12:30-13:30
-Rose Gray – 13:40-14:15
-Adéla – 14:45-15:25
-Skye Newman – 16:00-16:45
-Geese – 17:20-18:20
-SINN6R – 19:20-20:20
-4AM Kru – 21:05-22:35
-The Warehouse
-Meeshy – 12:00-13:25
-Djammin – 13:25-14:20
-Julian Fijma – 14:30-15:30
-Omar+ – 15:30-17:00
-Locky – 17:00-18:50
-Alisha – 19:00-20:10
-Skepta B2B East End Dubs – 21:05-22:50
-The Ballroom
-Bleech 9:3 – 12:20-13:00
-Cardinals – 13:50-14:40
-Clementine Douglas – 14:40-15:20
-Overpass – 16:00-16:50
-Florence Road – 17:30-18:15
-Unpeople – 19:15-20:15
-YT – 21:15-22:15
 The Canopy
 Tooth – 12:00-12:20
 Lamb – 12:40-13:00
@@ -112,37 +152,6 @@ Soul Mass Transit System – 01:45-03:00
 Piccadilly Party
 Beefy Melons – 22:00-23:00
 Sunday August 30
-The Grid
-Absolutely – 12:05-12:50
-Slayyyter – 13:35-14:20
-Maisie Peters – 15:00-15:45
-JADE – 16:15-17:15
-Sombr – 17:50-18:50
-RAYE – 19:35-21:05
-Dave – 21:35-23:05
-The Gallery presented by Budweiser
-M60 – 12:00-12:35
-Say Now – 12:45-13:20
-Clara La San – 13:50-14:35
-Kingfishr – 15:05-15:45
-Niko B – 16:15-17:15
-Nine Vicious – 17:50-18:30
-Jamie Webster – 19:20-20:20
-Josh Baker – 21:25-22:50
-The Warehouse
-Jack Marlow – 12:00-13:30
-Silva Bumpa – 13:30-14:15
-IN PARALLEL – 14:15-16:00
-Riordan – 16:00-17:30
-Mall Grab – 17:30-19:00
-Rossi. – 19:15-20:50
-The Ballroom
-Garage Flower – 12:30-13:10
-The North – 13:45-14:25
-Basht. – 15:00-15:45
-Bar Italia – 16:25-17:05
-The Lilacs – 17:15-18:15
-Speed – 19:40-20:40
 The Canopy
 Sade Olutola – 12:00-12:20
 Pozzy – 12:40-13:00
