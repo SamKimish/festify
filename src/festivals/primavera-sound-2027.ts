@@ -211,12 +211,12 @@ export const primaveraSound2027: Festival = {
   // left column is interrupted by the closing set and the strategic partner
   // logos; the small print sits left of the logo and above the partner strip.
   zones: {
-    header: { x: 2.75, y: 1.3, w: 94.5, h: 15 },
+    // Headliners fill everything above "closing*set".
+    header: { x: 2.75, y: 1.3, w: 94.5, h: 27.6 },
     mid: [
-      { x: 2.75, y: 1.3, w: 31.5, h: 27.9, belowHeader: true }, // above "closing*set"
       { x: 12, y: 37, w: 22.5, h: 21.5 }, // beside the partner logos
-      { x: 36.5, y: 1.3, w: 29, h: 57.4, belowHeader: true },
-      { x: 67.6, y: 1.3, w: 29.9, h: 57.4, belowHeader: true },
+      { x: 36.5, y: 30.2, w: 29, h: 28.5, belowHeader: true },
+      { x: 67.6, y: 30.2, w: 29.9, h: 28.5, belowHeader: true },
     ],
     small: [
       { x: 2.75, y: 61.8, w: 20.3, h: 32.4 },

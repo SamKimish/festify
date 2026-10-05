@@ -11,9 +11,13 @@ interface Props {
 
 // Base sizes as a percentage of poster width (cqw), before fitting.
 const HEADLINER_SIZE = 6.2;
+/** Largest a headliner may grow (cqw), e.g. when there are only one or two. */
+const HEADLINER_MAX = 13;
+/** Must match `.name-hl` in styles.css. */
+const HEADLINER_LINE_HEIGHT = 1;
 const GROUPS = {
-  mid: { base: 2.35, max: 1.15 },
-  small: { base: 1.75, max: 1.1 },
+  mid: { base: 2.35, max: 1 },
+  small: { base: 1.75, max: 1 },
 } as const;
 type Group = keyof typeof GROUPS;
 const MIN_SCALE = 0.3;
@@ -189,16 +193,27 @@ export const Poster = forwardRef<HTMLDivElement, Props>(function Poster(
     if (!W || !H) return;
     const set = (name: string, value: number) => poster.style.setProperty(name, `${value}cqw`);
 
-    // Headliners: one line each, as big as fits the width and the header's max height.
-    set('--hl-size', HEADLINER_SIZE);
-    const widest = Math.max(1, ...[...head.children].map((c) => (c as HTMLElement).scrollWidth));
-    const hlScale = Math.min(
-      1.25,
-      (zones.header.w * W) / 100 / widest,
-      (zones.header.h * H) / 100 / Math.max(1, head.offsetHeight),
-    );
-    set('--hl-size', HEADLINER_SIZE * hlScale);
-    const headerBottom = head.children.length ? ((head.offsetTop + head.offsetHeight) / H) * 100 + 0.8 : 0;
+    // Headliners fill the header block: each line is capped by the width it can
+    // take, and the remaining height is shared out ("water filling"), so short
+    // names come out bigger, like a real poster.
+    const hlEls = [...head.children] as HTMLElement[];
+    hlEls.forEach((el) => (el.style.fontSize = `${HEADLINER_SIZE}cqw`));
+    const cqw = W / 100;
+    const widthFit = hlEls.map((el) => (HEADLINER_SIZE * (zones.header.w * cqw)) / Math.max(1, el.scrollWidth));
+    const available = (zones.header.h * H) / 100 / cqw / HEADLINER_LINE_HEIGHT;
+    const totalAt = (t: number) => widthFit.reduce((sum, f) => sum + Math.min(f, t), 0);
+    let lo = 0;
+    let hi = HEADLINER_MAX;
+    for (let i = 0; i < 30; i++) {
+      const t = (lo + hi) / 2;
+      if (totalAt(t) <= available) lo = t;
+      else hi = t;
+    }
+    hlEls.forEach((el, i) => (el.style.fontSize = `${Math.min(widthFit[i], lo)}cqw`));
+    const posterTop = poster.getBoundingClientRect().top;
+    const headerBottom = hlEls.length
+      ? ((Math.max(...hlEls.map((el) => el.getBoundingClientRect().bottom)) - posterTop) / H) * 100 + 0.8
+      : 0;
 
     const boxesFor = (list: Region[]): Box[] =>
       list.map((r) => {
@@ -310,7 +325,7 @@ export const Poster = forwardRef<HTMLDivElement, Props>(function Poster(
         draggable={false}
       />
 
-      <div className="zone" style={{ ...pct(zones.header), height: 'auto' }}>
+      <div className="zone" style={pct(zones.header)}>
         <div ref={headRef} className="headliners">
           {headliners.map((a) => (
             <button key={a.act.display} type="button" className="name name-hl" onClick={() => onSelect(a)}>
