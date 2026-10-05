@@ -55,20 +55,20 @@ export const reading2026: PhotosFestival = {
   lineup: lineupFrom(readingData as TimetableJson),
 };
 
-/** Leeds: yellow on black, a taller story-format poster, its own bill and days. */
+/** Leeds: yellow on black, same layout as Reading, its own bill and days. */
 export const leeds2026: PhotosFestival = {
   ...shared,
   id: 'leeds-2026',
   site: { group: 'reading-leeds-2026', label: 'Leeds' },
   location: 'Bramham Park, Leeds',
-  // Provisional blank made from the official poster (festival-sources/reading-leeds-2026/make-leeds-blank.cjs).
   background: 'festivals/reading-leeds-2026/leeds-background.webp',
-  width: 1152,
-  height: 2048,
+  width: 1200,
+  height: 1500,
   theme: { ...shared.theme, textColor: '#f2c84b', accentColor: '#f2c84b', dotColors: ['#f2c84b', '#efe0b0', '#8a6d1c', '#c9b48a'] },
-  headliners: { zone: { x: 3, y: 22.2, w: 94, h: 23 }, count: 5, nameShare: 0.36 },
-  rest: { zone: { x: 5, y: 47, w: 90, h: 35.5 }, label: 'Special guests' },
-  credit: { x: 5, y: 83, w: 90, h: 2.6 },
+  // The Leeds blank shares Reading's layout (logo, rules), so the same zones apply.
+  headliners: reading2026.headliners,
+  rest: reading2026.rest,
+  credit: reading2026.credit,
   colors: { names: '#f2c84b', photoTint: '#efe0b0', label: '#f2c84b', separator: '#efe0b0', credit: '#efe0b0' },
   lineup: lineupFrom(leedsData as TimetableJson),
 };

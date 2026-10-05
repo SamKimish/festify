@@ -66,9 +66,7 @@ The "Try it with demo data" button works without any Spotify setup.
 
 Reading & Leeds share one menu entry with a Reading / Leeds toggle: each site is its own festival (`site.group`) with
 its own artwork, bill and timetable. Timetables are plain text in `festival-sources/reading-leeds-2026/`, turned into
-lineup data with `node scripts/parse-reading.mjs reading|leeds <txt> <json>`. The Leeds artwork is a provisional blank
-made from the official poster (`make-leeds-blank.cjs`); drop a real blank into
-`public/festivals/reading-leeds-2026/leeds-background.webp` to replace it.
+lineup data with `node scripts/parse-reading.mjs reading|leeds <txt> <json>`.
 
 ## Brand assets
 
