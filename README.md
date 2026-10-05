@@ -63,7 +63,7 @@ The "Try it with demo data" button works without any Spotify setup.
 
 ## Brand assets
 
-`node scripts/make-brand-assets.mjs` regenerates the favicon, home-screen icon and social preview image (`public/og-image.png`).
+`node scripts/make-brand-assets.mjs` regenerates the favicon, home-screen icon and social preview image (`public/og-image.jpg`).
 
 ## Deploying
 

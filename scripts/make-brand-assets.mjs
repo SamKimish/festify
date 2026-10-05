@@ -91,6 +91,6 @@ for (const p of posters) layers.push({ input: await card(p.file, 250, p.angle), 
 
 await sharp({ create: { width: W, height: H, channels: 3, background: BG } })
   .composite([...layers, { input: Buffer.from(overlay), left: 0, top: 0 }])
-  .png({ compressionLevel: 9 })
-  .toFile('public/og-image.png');
-console.log('Wrote favicon.svg, favicon-32.png, apple-touch-icon.png, og-image.png');
+  .jpeg({ quality: 82, mozjpeg: true })
+  .toFile('public/og-image.jpg');
+console.log('Wrote favicon.svg, favicon-32.png, apple-touch-icon.png, og-image.jpg');

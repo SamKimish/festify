@@ -109,7 +109,11 @@ main { flex: 1; padding: 24px; }
 .ranking-pos { color: var(--muted); font-variant-numeric: tabular-nums; grid-row: span 2; }
 .ranking-name { font-weight: 700; text-transform: uppercase; font-variation-settings: 'wdth' 88; }
 .ranking-why { font-size: 12px; color: var(--muted); }
-@media (max-width: 900px) { .sidebar { position: static; max-height: none; } }
+/* On phones the sidebar flows with the page: no inner scroll box, which on iOS
+   would swallow swipes that start inside it and stop the page scrolling. */
+@media (max-width: 900px) {
+  .sidebar { position: static; max-height: none; overflow: visible; overscroll-behavior: auto; padding-right: 0; }
+}
 
 /* ---------- Poster ---------- */
 .poster {
@@ -345,7 +349,7 @@ a.primary, a.secondary { display: inline-block; text-decoration: none; text-alig
 .playlist-done { margin: 10px 0 0; font-size: 14px; }
 .playlist-done a { color: var(--spotify); font-weight: 700; text-decoration: none; }
 
-.switch-row { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-weight: 600; }
+.switch-row { position: relative; display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-weight: 600; }
 .switch-row input { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .switch-row small { display: block; font-weight: 400; font-size: 13px; color: var(--muted); margin-top: 2px; }
 .switch {
