@@ -1,8 +1,9 @@
-import { forwardRef, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { forwardRef, useCallback, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import type { CuratedAct } from '../curate';
 import type { ReelsFestival } from '../festivals';
 import { posterLabel } from '../posterEdits';
 import { layoutReels, type ReelLayout } from '../reelsLayout';
+import { useFontEpoch } from '../useFontEpoch';
 import { ActLabel } from './ActLabel';
 
 interface Props {
@@ -21,15 +22,12 @@ export const ReelsPoster = forwardRef<HTMLDivElement, Props>(function ReelsPoste
   ref,
 ) {
   const measureRef = useRef<HTMLDivElement>(null);
-  const [fontsReady, setFontsReady] = useState(() => document.fonts.status === 'loaded');
+  const fontEpoch = useFontEpoch(festival.theme.fontFamily, festival.theme.fontWeight);
   const [computed, setComputed] = useState<{ acts: CuratedAct[]; reels: ReelLayout[] } | null>(null);
   const layout = computed?.acts === acts ? computed.reels : null;
   const placed = acts.filter((a) => !a.act.fixed);
   const { theme } = festival;
 
-  useEffect(() => {
-    if (!fontsReady) document.fonts.ready.then(() => setFontsReady(true));
-  }, [fontsReady]);
 
   const runLayout = useCallback(() => {
     // Logos know their shape; acts without one are measured as text.
@@ -46,7 +44,7 @@ export const ReelsPoster = forwardRef<HTMLDivElement, Props>(function ReelsPoste
     // `placed` is derived from `acts`.
   }, [acts, festival]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useLayoutEffect(runLayout, [runLayout, fontsReady]);
+  useLayoutEffect(runLayout, [runLayout, fontEpoch]);
 
   const base = import.meta.env.BASE_URL;
 

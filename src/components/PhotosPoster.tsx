@@ -5,6 +5,7 @@ import type { PhotosFestival } from '../festivals';
 import { photoFor, posterPhoto } from '../photos';
 import { posterLabel } from '../posterEdits';
 import type { ListeningProfile } from '../spotify/profile';
+import { useFontEpoch } from '../useFontEpoch';
 import { ActLabel } from './ActLabel';
 
 interface Props {
@@ -63,7 +64,7 @@ export const PhotosPoster = forwardRef<HTMLDivElement, Props>(function PhotosPos
   ref,
 ) {
   const measureRef = useRef<HTMLDivElement>(null);
-  const [fontsReady, setFontsReady] = useState(() => document.fonts.status === 'loaded');
+  const fontEpoch = useFontEpoch(festival.theme.fontFamily, festival.theme.fontWeight);
   const [computed, setComputed] = useState<{ acts: CuratedAct[]; head: HeadlinerLayout; rest: DayLine[] } | null>(null);
   const [photos, setPhotos] = useState<Record<string, string | null>>({});
   const { theme, colors, headliners: H, rest: R } = festival;
@@ -74,9 +75,6 @@ export const PhotosPoster = forwardRef<HTMLDivElement, Props>(function PhotosPos
   const rest = acts.slice(count);
   const layout = computed?.acts === acts ? computed : null;
 
-  useEffect(() => {
-    if (!fontsReady) document.fonts.ready.then(() => setFontsReady(true));
-  }, [fontsReady]);
 
   // Look up photos for the headliners (cached between visits).
   const headKey = heads.map((a) => a.act.display).join('|');
@@ -125,7 +123,7 @@ export const PhotosPoster = forwardRef<HTMLDivElement, Props>(function PhotosPos
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [acts, festival]);
 
-  useLayoutEffect(runLayout, [runLayout, fontsReady]);
+  useLayoutEffect(runLayout, [runLayout, fontEpoch]);
 
   const pct = (z: { x: number; y: number; w: number; h: number }): CSSProperties => ({
     left: `${z.x}%`,

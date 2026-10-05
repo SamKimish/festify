@@ -2,6 +2,7 @@ import { forwardRef, useCallback, useEffect, useLayoutEffect, useRef, useState, 
 import { HEADLINER_COUNT, type CuratedAct } from '../curate';
 import type { ColumnsFestival, Region, Zone } from '../festivals';
 import { posterLabel } from '../posterEdits';
+import { useFontEpoch } from '../useFontEpoch';
 import { ActLabel } from './ActLabel';
 
 interface Props {
@@ -182,7 +183,7 @@ export const ColumnsPoster = forwardRef<HTMLDivElement, Props>(function ColumnsP
   const posterRef = useRef<HTMLDivElement | null>(null);
   const headRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLDivElement>(null);
-  const [fontsReady, setFontsReady] = useState(() => document.fonts.status === 'loaded');
+  const fontEpoch = useFontEpoch(festival.theme.fontFamily, festival.theme.fontWeight);
   const [layout, setLayout] = useState<{ mid: GroupLayout; small: GroupLayout } | null>(null);
 
   const placed = acts.filter((a) => !a.act.fixed);
@@ -191,9 +192,6 @@ export const ColumnsPoster = forwardRef<HTMLDivElement, Props>(function ColumnsP
   const rest = placed.slice(HEADLINER_COUNT);
   const { zones } = festival;
 
-  useEffect(() => {
-    if (!fontsReady) document.fonts.ready.then(() => setFontsReady(true));
-  }, [fontsReady]);
 
   const runLayout = useCallback(() => {
     const poster = posterRef.current;
@@ -223,6 +221,15 @@ export const ColumnsPoster = forwardRef<HTMLDivElement, Props>(function ColumnsP
     }
     const hlSizes = widthFit.map((f) => Math.min(f, lo));
     hlEls.forEach((el, i) => (el.style.fontSize = `${hlSizes[i]}cqw`));
+    // Safety net: if a name still renders wider than the poster (e.g. a font
+    // swapped in late), shrink just that name to fit.
+    const maxWidth = (zones.header.w * W) / 100;
+    hlEls.forEach((el, i) => {
+      if (el.scrollWidth > maxWidth) {
+        hlSizes[i] *= (maxWidth / el.scrollWidth) * 0.98;
+        el.style.fontSize = `${hlSizes[i]}cqw`;
+      }
+    });
     const posterTop = poster.getBoundingClientRect().top;
     const headerBottom = hlEls.length
       ? ((Math.max(...hlEls.map((el) => el.getBoundingClientRect().bottom)) - posterTop) / H) * 100 + 0.8
@@ -282,16 +289,31 @@ export const ColumnsPoster = forwardRef<HTMLDivElement, Props>(function ColumnsP
     // `rest` is derived from `acts`.
   }, [acts, festival]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useLayoutEffect(runLayout, [runLayout, fontsReady]);
+  useLayoutEffect(runLayout, [runLayout, fontEpoch]);
 
   // The wrap prediction can differ slightly between browsers (e.g. iOS Safari), so
-  // set the indent from the real rendered line count.
+  // set the indent from the real rendered line count, then make sure no column
+  // overflows (which would let names overlap the next column's or the artwork).
   useLayoutEffect(() => {
-    const names = posterRef.current?.querySelectorAll<HTMLElement>('.col .name');
-    if (!names?.length) return;
-    for (let pass = 0; pass < 2; pass++) {
-      const heights = [...names].map((el) => [el, el.offsetHeight, parseFloat(getComputedStyle(el).lineHeight)] as const);
-      for (const [el, h, lh] of heights) el.classList.toggle('wrapped', h > lh * 1.5);
+    const poster = posterRef.current;
+    const names = poster?.querySelectorAll<HTMLElement>('.col .name');
+    if (!poster || !names?.length) return;
+    const markWraps = () => {
+      for (let pass = 0; pass < 2; pass++) {
+        const heights = [...names].map((el) => [el, el.offsetHeight, parseFloat(getComputedStyle(el).lineHeight)] as const);
+        for (const [el, h, lh] of heights) el.classList.toggle('wrapped', h > lh * 1.5);
+      }
+    };
+    markWraps();
+    for (const group of ['mid', 'small'] as const) {
+      const cols = [...poster.querySelectorAll<HTMLElement>(`.col-${group}`)];
+      for (let attempt = 0; attempt < 6; attempt++) {
+        const worst = Math.max(1, ...cols.map((c) => c.scrollHeight / Math.max(1, c.clientHeight)));
+        if (worst <= 1.005) break;
+        const current = parseFloat(poster.style.getPropertyValue(`--${group}-size`));
+        poster.style.setProperty(`--${group}-size`, `${(current / worst) * 0.98}cqw`);
+        markWraps();
+      }
     }
   }, [layout]);
 
@@ -319,7 +341,7 @@ export const ColumnsPoster = forwardRef<HTMLDivElement, Props>(function ColumnsP
   const { theme } = festival;
   const columns = (group: Group) =>
     layout?.[group].columns.map((col, c) => (
-      <div key={`${group}-${c}`} className="zone col" style={pct(col.zone)}>
+      <div key={`${group}-${c}`} className={`zone col col-${group}`} style={pct(col.zone)}>
         {col.items.map((i) =>
           rest[i] ? (
             <button

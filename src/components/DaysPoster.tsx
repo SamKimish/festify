@@ -1,8 +1,9 @@
-import { Fragment, forwardRef, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { Fragment, forwardRef, useCallback, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import type { CuratedAct } from '../curate';
 import type { DaysFestival } from '../festivals';
 import { layoutDays, type DayLine } from '../daysLayout';
 import { posterLabel } from '../posterEdits';
+import { useFontEpoch } from '../useFontEpoch';
 import { ActLabel } from './ActLabel';
 
 interface Props {
@@ -16,15 +17,12 @@ const SEPARATOR = ' • ';
 
 export const DaysPoster = forwardRef<HTMLDivElement, Props>(function DaysPoster({ festival, acts, onSelect }, ref) {
   const measureRef = useRef<HTMLDivElement>(null);
-  const [fontsReady, setFontsReady] = useState(() => document.fonts.status === 'loaded');
+  const fontEpoch = useFontEpoch(festival.theme.fontFamily, festival.theme.fontWeight);
   // Remember which acts a layout was computed for, so a stale one is never drawn.
   const [computed, setComputed] = useState<{ acts: CuratedAct[]; lines: DayLine[][] } | null>(null);
   const layout = computed?.acts === acts ? computed.lines : null;
   const { theme } = festival;
 
-  useEffect(() => {
-    if (!fontsReady) document.fonts.ready.then(() => setFontsReady(true));
-  }, [fontsReady]);
 
   const runLayout = useCallback(() => {
     const els = [...(measureRef.current?.children ?? [])] as HTMLElement[];
@@ -40,7 +38,7 @@ export const DaysPoster = forwardRef<HTMLDivElement, Props>(function DaysPoster(
     setComputed({ acts, lines: layoutDays(days, measure) });
   }, [acts, festival]);
 
-  useLayoutEffect(runLayout, [runLayout, fontsReady]);
+  useLayoutEffect(runLayout, [runLayout, fontEpoch]);
 
   return (
     <div
