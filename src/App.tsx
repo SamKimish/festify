@@ -364,6 +364,7 @@ export default function App() {
                   acts={poster.acts}
                   curatedFor={state.profile.displayName}
                   curatedVia={CREDIT_VIA[state.profile.source]}
+                  profile={state.profile}
                   onSelect={setSelected}
                 />
               ) : (

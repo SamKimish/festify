@@ -1,8 +1,10 @@
 import { forwardRef } from 'react';
 import type { CuratedAct } from '../curate';
 import type { Festival } from '../festivals';
+import type { ListeningProfile } from '../spotify/profile';
 import { ColumnsPoster } from './ColumnsPoster';
 import { DaysPoster } from './DaysPoster';
+import { PhotosPoster } from './PhotosPoster';
 import { ReelsPoster } from './ReelsPoster';
 
 interface Props {
@@ -10,6 +12,7 @@ interface Props {
   acts: CuratedAct[];
   curatedFor: string;
   curatedVia: string;
+  profile: ListeningProfile;
   onSelect: (act: CuratedAct) => void;
 }
 
@@ -18,6 +21,18 @@ export const Poster = forwardRef<HTMLDivElement, Props>(function Poster({ festiv
   switch (festival.layout) {
     case 'reels':
       return <ReelsPoster ref={ref} festival={festival} acts={props.acts} onSelect={props.onSelect} />;
+    case 'photos':
+      return (
+        <PhotosPoster
+          ref={ref}
+          festival={festival}
+          acts={props.acts}
+          profile={props.profile}
+          curatedFor={props.curatedFor}
+          curatedVia={props.curatedVia}
+          onSelect={props.onSelect}
+        />
+      );
     case 'days':
       return <DaysPoster ref={ref} festival={festival} acts={props.acts} onSelect={props.onSelect} />;
     default:

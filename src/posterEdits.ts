@@ -54,7 +54,10 @@ export function buildPoster(
   const lineupByName = new Map(lineup.map((a) => [a.display, a]));
   for (const name of edits.added) {
     const act = lineupByName.get(name);
-    if (act && !byName.has(name)) byName.set(name, { act, score: median, artists: [], origin: 'added' });
+    // Adding an act you were only suggested makes it yours (no * on the poster).
+    if (act && (!byName.has(name) || byName.get(name)!.origin === 'suggested')) {
+      byName.set(name, { act, score: median, artists: [], origin: 'added' });
+    }
   }
 
   const hiddenSet = new Set(edits.hidden);

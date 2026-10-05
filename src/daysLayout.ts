@@ -11,16 +11,28 @@ export interface DayLine {
   tier: number; // 0 = headliners
 }
 
-/** Acts per tier: headliners, second line, then everyone else. */
-const TIER_COUNTS = [4, 5, Infinity];
-/** Font size of each tier relative to the headliners (from the official poster). */
-const TIER_SIZES = [1, 0.78, 0.66];
-/** Headliner size at scale 1 (cqw), matching the official poster. */
-const BASE_SIZE = 3.7;
-const MAX_SCALE = 1.7;
-const LINE_HEIGHT = 1.15;
-/** Days with few acts may print at most this much bigger than the busiest day. */
-const MAX_DAY_RATIO = 1.3;
+export interface LineOptions {
+  /** Acts per tier: headliners, second line, then everyone else. */
+  tierCounts: number[];
+  /** Font size of each tier relative to the first. */
+  tierSizes: number[];
+  /** First-tier size at scale 1 (cqw). */
+  baseSize: number;
+  maxScale: number;
+  lineHeight: number;
+  /** Days with few acts may print at most this much bigger than the busiest day. */
+  maxDayRatio: number;
+}
+
+/** Defaults match the Glastonbury poster. */
+const DEFAULTS: LineOptions = {
+  tierCounts: [4, 5, Infinity],
+  tierSizes: [1, 0.78, 0.66],
+  baseSize: 3.7,
+  maxScale: 1.7,
+  lineHeight: 1.15,
+  maxDayRatio: 1.3,
+};
 
 export interface Measure {
   /** Width of each act's name at 1px font size (i.e. em). */
@@ -48,31 +60,31 @@ function fillLines(items: number[], m: Measure, size: number, width: number): nu
   return lines;
 }
 
-function linesAt(items: number[], m: Measure, scale: number, width: number): DayLine[] {
+function linesAt(items: number[], m: Measure, scale: number, width: number, o: LineOptions): DayLine[] {
   const out: DayLine[] = [];
   let next = 0;
-  TIER_COUNTS.forEach((count, tier) => {
+  o.tierCounts.forEach((count, tier) => {
     const tierItems = items.slice(next, next + count);
     next += tierItems.length;
-    const size = BASE_SIZE * TIER_SIZES[tier] * scale;
+    const size = o.baseSize * o.tierSizes[tier] * scale;
     for (const line of fillLines(tierItems, m, size, width)) out.push({ items: line, size, tier });
   });
   return out;
 }
 
-const fits = (lines: DayLine[], m: Measure, width: number, height: number) =>
-  lines.reduce((h, l) => h + l.size * LINE_HEIGHT, 0) <= height &&
+const fits = (lines: DayLine[], m: Measure, width: number, height: number, o: LineOptions) =>
+  lines.reduce((h, l) => h + l.size * o.lineHeight, 0) <= height &&
   lines.every((l) => l.items.length > 1 || m.widths[l.items[0]] * l.size <= width);
 
 /** Largest scale at which a day's acts fit its zone. */
-function bestScale(items: number[], m: Measure, width: number, height: number): number {
+function bestScale(items: number[], m: Measure, width: number, height: number, o: LineOptions): number {
   if (!items.length) return Infinity;
   let lo = 0.05;
-  let hi = MAX_SCALE;
-  if (fits(linesAt(items, m, hi, width), m, width, height)) return hi;
+  let hi = o.maxScale;
+  if (fits(linesAt(items, m, hi, width, o), m, width, height, o)) return hi;
   for (let i = 0; i < 20; i++) {
     const mid = (lo + hi) / 2;
-    if (fits(linesAt(items, m, mid, width), m, width, height)) lo = mid;
+    if (fits(linesAt(items, m, mid, width, o), m, width, height, o)) lo = mid;
     else hi = mid;
   }
   return lo;
@@ -83,11 +95,16 @@ function bestScale(items: number[], m: Measure, width: number, height: number): 
  * zone size in cqw. Busy days shrink to fit; quiet days don't balloon past
  * MAX_DAY_RATIO times the busiest, so the days still look like one poster.
  */
-export function layoutDays(days: { items: number[]; width: number; height: number }[], m: Measure): DayLine[][] {
-  const scales = days.map((d) => bestScale(d.items, m, d.width, d.height));
+export function layoutDays(
+  days: { items: number[]; width: number; height: number }[],
+  m: Measure,
+  options: Partial<LineOptions> = {},
+): DayLine[][] {
+  const o = { ...DEFAULTS, ...options };
+  const scales = days.map((d) => bestScale(d.items, m, d.width, d.height, o));
   const smallest = Math.min(...scales.filter(Number.isFinite));
   return days.map((d, i) => {
-    const scale = Number.isFinite(smallest) ? Math.min(scales[i], smallest * MAX_DAY_RATIO) : 1;
-    return linesAt(d.items, m, scale, d.width);
+    const scale = Number.isFinite(smallest) ? Math.min(scales[i], smallest * o.maxDayRatio) : 1;
+    return linesAt(d.items, m, scale, d.width, o);
   });
 }

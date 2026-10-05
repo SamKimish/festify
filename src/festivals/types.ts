@@ -121,4 +121,23 @@ export interface DaysFestival extends FestivalBase {
   days: DaySection[];
 }
 
-export type Festival = ColumnsFestival | ReelsFestival | DaysFestival;
+/**
+ * A row of headliners, each with their name over a photo, then the rest in
+ * bullet-separated lines (e.g. Reading & Leeds).
+ */
+export interface PhotosFestival extends FestivalBase {
+  layout: 'photos';
+  headliners: {
+    zone: Zone;
+    /** Most headliner columns. */
+    count: number;
+    /** Share of the zone's height for the names; the photos get the rest. */
+    nameShare: number;
+  };
+  /** Everyone else, with an optional heading such as "Special guests". */
+  rest: { zone: Zone; label?: string };
+  credit: Zone;
+  colors: { names: string; photoTint: string; label: string; separator: string; credit: string };
+}
+
+export type Festival = ColumnsFestival | ReelsFestival | DaysFestival | PhotosFestival;
