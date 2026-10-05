@@ -9,6 +9,7 @@ interface Props {
   festival: Festival;
   acts: CuratedAct[];
   curatedFor: string;
+  curatedVia: string;
   onSelect: (act: CuratedAct) => void;
 }
 

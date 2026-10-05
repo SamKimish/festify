@@ -8,6 +8,8 @@ interface Props {
   festival: ColumnsFestival;
   acts: CuratedAct[];
   curatedFor: string;
+  /** "spotify", "last.fm"… for the credit line. */
+  curatedVia: string;
   onSelect: (act: CuratedAct) => void;
 }
 
@@ -174,7 +176,7 @@ function placeGroup(
 }
 
 export const ColumnsPoster = forwardRef<HTMLDivElement, Props>(function ColumnsPoster(
-  { festival, acts, curatedFor, onSelect },
+  { festival, acts, curatedFor, curatedVia, onSelect },
   ref,
 ) {
   const posterRef = useRef<HTMLDivElement | null>(null);
@@ -388,7 +390,7 @@ export const ColumnsPoster = forwardRef<HTMLDivElement, Props>(function ColumnsP
 
       <div className="zone zone-credit" style={pct(zones.credit)}>
         <div className="credit-title">your*lineup</div>
-        <div className="credit-sub">curated from your spotify for</div>
+        <div className="credit-sub">curated from your {curatedVia} for</div>
         <div className="credit-name">{curatedFor}</div>
         {acts.some((x) => x.origin === 'suggested') && <div className="credit-note">* artists you might like</div>}
       </div>

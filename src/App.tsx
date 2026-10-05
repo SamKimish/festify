@@ -36,6 +36,14 @@ const SOURCE_LABEL: Record<ListeningProfile['source'], string> = {
   demo: 'Demo',
 };
 
+/** Lower-case, as printed in Primavera's "curated from your … for" line. */
+const CREDIT_VIA: Record<ListeningProfile['source'], string> = {
+  spotify: 'spotify',
+  lastfm: 'last.fm',
+  export: 'spotify history',
+  demo: 'demo listening',
+};
+
 const read = (key: string) => {
   try {
     return localStorage.getItem(key);
@@ -355,6 +363,7 @@ export default function App() {
                   festival={festival}
                   acts={poster.acts}
                   curatedFor={state.profile.displayName}
+                  curatedVia={CREDIT_VIA[state.profile.source]}
                   onSelect={setSelected}
                 />
               ) : (

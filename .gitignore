@@ -5,3 +5,4 @@ dist
 festival-sources/*/hd-raw/
 festival-sources/*/line-up.html
 festival-sources/*/ids-cache.json
+festival-sources/*/ids-run.log

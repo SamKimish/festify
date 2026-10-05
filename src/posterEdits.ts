@@ -1,4 +1,4 @@
-import type { CuratedAct } from './curate';
+import { HEADLINER_COUNT, type CuratedAct } from './curate';
 import type { Act } from './festivals';
 
 /** A person's tweaks to one festival's poster, keyed by act display name. */
@@ -63,7 +63,10 @@ export function buildPoster(
   const shown = all.filter((a) => !hiddenSet.has(a.act.display));
   const pinned = edits.headliners.map((n) => shown.find((a) => a.act.display === n)).filter(Boolean) as CuratedAct[];
   const rest = shown.filter((a) => !pinned.includes(a)).sort((a, b) => b.score - a.score || a.act.billing - b.act.billing);
-  return { acts: [...pinned, ...rest], hidden };
+  // Suggestions never take a headline slot from an act you actually listen to.
+  const slots = Math.max(0, HEADLINER_COUNT - pinned.length);
+  const top = rest.filter((a) => a.origin !== 'suggested').slice(0, slots);
+  return { acts: [...pinned, ...top, ...rest.filter((a) => !top.includes(a))], hidden };
 }
 
 /** Text as printed on the poster: suggestions get the festify* asterisk. */
