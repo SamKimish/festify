@@ -18,7 +18,7 @@ interface Props {
   profile: ListeningProfile;
   edits: PosterEdits;
   onEdits: (edits: PosterEdits) => void;
-  suggestions: { available: boolean; enabled: boolean; loading: boolean; count: number; failed: boolean };
+  suggestions: { available: boolean; enabled: boolean; loading: boolean; count: number; failed: boolean; hint: string };
   onToggleSuggestions: (on: boolean) => void;
   /** Last.fm and data uploads only: the listening window, and changing it. */
   period?: ListeningPeriod;
@@ -44,7 +44,8 @@ export function Sidebar(props: Props) {
         <p className="summary-count">
           {lineup ? (
             <>
-              <strong>{acts.length}</strong> of {lineup.length.toLocaleString()} acts on your poster
+              <strong>{acts.length}</strong>
+              {festival.layout === 'personal' ? '' : ` of ${lineup.length.toLocaleString()}`} acts on your poster
             </>
           ) : (
             'Loading lineup…'
@@ -93,7 +94,7 @@ export function Sidebar(props: Props) {
             Add artists you might like<span className="suggested-star">*</span>
             <small>
               {!props.suggestions.enabled
-                ? 'Acts on the lineup similar to your favourites'
+                ? props.suggestions.hint
                 : props.suggestions.loading
                   ? 'Finding similar artists…'
                   : props.suggestions.failed

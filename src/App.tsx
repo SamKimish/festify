@@ -253,7 +253,7 @@ export default function App() {
     if (!suggestOn || !profile || !lineup || !lastfmConfigured || isDemo) return;
     let live = true;
     setSuggested({ key: suggestKey, acts: [], loading: true, failed: false });
-    suggestActs(lineup, profile, listened)
+    suggestActs(lineup, profile, listened, { anyArtist: personal })
       .then((acts) => live && setSuggested({ key: suggestKey, acts, loading: false, failed: false }))
       .catch((e) => {
         console.error(e);
@@ -472,8 +472,10 @@ export default function App() {
               edits={edits}
               onEdits={setEdits}
               suggestions={{
-                // (Your own festival only has artists you already love.)
-                available: lastfmConfigured && !isDemo && !personal,
+                available: lastfmConfigured && !isDemo,
+                hint: personal
+                  ? "Similar artists you don't listen to yet"
+                  : 'Acts on the lineup similar to your favourites',
                 enabled: suggestOn,
                 loading: suggested.loading && suggested.key === suggestKey,
                 failed: suggested.failed && suggested.key === suggestKey,
