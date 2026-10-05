@@ -34,6 +34,8 @@ export interface Act {
   fixed?: Zone;
   /** Logo image (path relative to the site root) and its pixel size, for logo posters. */
   logo?: { src: string; width: number; height: number };
+  /** Day section the act appears in, for day-based posters (matches DaySection.label). */
+  day?: string;
 }
 
 export interface FestivalTheme {
@@ -87,4 +89,22 @@ export interface ReelsFestival extends FestivalBase {
   reels: Zone[];
 }
 
-export type Festival = ColumnsFestival | ReelsFestival;
+/** One day's block on a day-split poster. */
+export interface DaySection {
+  /** Matches Act.day, e.g. "FRIDAY". The label itself is printed on the artwork. */
+  label: string;
+  /** Area for that day's names. */
+  zone: Zone;
+  /** Colour of the top two lines… */
+  topColor: string;
+  /** …and of everyone else. */
+  restColor: string;
+}
+
+/** Names in centred, bullet-separated lines under each day (e.g. Glastonbury). */
+export interface DaysFestival extends FestivalBase {
+  layout: 'days';
+  days: DaySection[];
+}
+
+export type Festival = ColumnsFestival | ReelsFestival | DaysFestival;

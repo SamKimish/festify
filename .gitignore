@@ -3,3 +3,4 @@ dist
 .env.local
 .env.*.local
 festival-sources/*/hd-raw/
+festival-sources/*/line-up.html

@@ -261,3 +261,16 @@ main { flex: 1; padding: 24px; }
   .festival-picker option:disabled { color: var(--muted); opacity: 0.6; cursor: default; }
   .festival-picker option::checkmark { content: '*'; color: var(--accent); font-weight: 800; }
 }
+
+/* ---------- Day-split posters ---------- */
+.day-block { display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.day-line { display: flex; justify-content: center; align-items: baseline; white-space: nowrap; line-height: 1.15; }
+.day-name {
+  background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; cursor: pointer;
+  text-transform: uppercase; letter-spacing: 0.01em; white-space: nowrap;
+}
+.day-name:hover, .day-name:focus-visible { color: #fff; outline: none; text-decoration: underline; text-underline-offset: 0.12em; }
+.day-sep { opacity: 0.9; }
+.measure .day-name { display: inline-block; }
+.measure > span.day-name { display: block; width: max-content; }
+.days-empty { position: absolute; left: 10%; width: 80%; top: 36%; text-align: center; }

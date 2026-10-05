@@ -96,7 +96,8 @@ export function curate(festival: Festival, profile: ListeningProfile): CuratedAc
     byName.set(key, [...(byName.get(key) ?? []), s]);
   }
 
-  const results: CuratedAct[] = [];
+  const order = new Map(festival.lineup.map((act, i) => [act, i]));
+  const candidates: (CuratedAct & { direct: boolean })[] = [];
   festival.lineup.forEach((act) => {
     const matched = new Map<string, ScoredArtist>();
     for (const m of act.members) {
@@ -109,14 +110,27 @@ export function curate(festival: Festival, profile: ListeningProfile): CuratedAc
     const artists = [...matched.values()].sort((a, b) => b.score - a.score);
     // A B2B is as strong as its best artist, plus a little for the others.
     const score = artists[0].score + 0.1 * artists.slice(1).reduce((t, a) => t + a.score, 0);
-    results.push({ act, score, artists });
+    // "Direct" = the act is the artist's own billing rather than a collaboration they're part of.
+    const direct = act.members.length === 1 || artists.some((a) => normalizeName(a.stats.name) === normalizeName(act.members[0].name));
+    candidates.push({ act, score, artists, direct });
   });
 
+  // Big lineups list some artists more than once (solo set, DJ set, B2B…).
+  // Each artist claims one act: their own billing first, then the best billed.
+  // Acts whose artists have all been claimed elsewhere are dropped.
+  const claimed = new Set<string>();
+  const results: CuratedAct[] = [];
+  candidates
+    .sort((a, b) => Number(b.direct) - Number(a.direct) || a.act.billing - b.act.billing || order.get(a.act)! - order.get(b.act)!)
+    .forEach(({ direct: _, ...c }) => {
+      const fresh = c.artists.filter((a) => !claimed.has(a.stats.id));
+      if (!fresh.length) return;
+      fresh.forEach((a) => claimed.add(a.stats.id));
+      results.push(c);
+    });
+
   results.sort(
-    (a, b) =>
-      b.score - a.score ||
-      a.act.billing - b.act.billing ||
-      festival.lineup.indexOf(a.act) - festival.lineup.indexOf(b.act),
+    (a, b) => b.score - a.score || a.act.billing - b.act.billing || order.get(a.act)! - order.get(b.act)!,
   );
   return results;
 }

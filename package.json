@@ -12,6 +12,7 @@
   "dependencies": {
     "@fontsource-variable/archivo": "^5.3.0",
     "@fontsource/anton": "^5.3.0",
+    "@fontsource/gloock": "^5.3.0",
     "html-to-image": "^1.11.13",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"

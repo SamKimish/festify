@@ -26,7 +26,9 @@ export function demoProfile(festival: Festival): ListeningProfile {
   const rand = mulberry32(2027);
   const pickWord = () => SONG_WORDS[Math.floor(rand() * SONG_WORDS.length)];
   const members = festival.lineup.flatMap((a) => a.members.map((m) => ({ m, billing: a.billing })));
-  const chosen = members.filter(({ billing }) => rand() < ([0.45, 0.35, 0.3, 0.12][billing] ?? 0.1));
+  // Full lineups (thousands of small acts) get a much lower pick rate past the poster.
+  const deepCut = festival.lineup.length > 300 ? 0.008 : 0.1;
+  const chosen = members.filter(({ billing }) => rand() < ([0.45, 0.35, 0.3, 0.12][billing] ?? deepCut));
 
   const profile: ListeningProfile = {
     version: 1,
