@@ -4,7 +4,8 @@ import { Poster } from './components/Poster';
 import { PosterActions } from './components/PosterActions';
 import { curate, reasonsFor, type CuratedAct } from './curate';
 import { demoProfile } from './demo';
-import { comingSoon, festivals, festivalsByEdition } from './festivals';
+import { comingSoon, festivals, festivalsByEdition, lineupOf, loadLineup, type Act } from './festivals';
+import { SpotifyError } from './spotify/api';
 import { handleRedirect, isConfigured, isLoggedIn, login, logout, redirectUri } from './spotify/auth';
 import {
   clearCachedProfile,
@@ -32,7 +33,25 @@ function storedFestival(): string {
   return festivals[0].id;
 }
 
-/** e.g. "Primavera Sound Barcelona 2027 and Slam Dunk Festival 2027". */
+const DEFAULT_TITLE = 'Festify · Your festival lineup, built from your Spotify';
+
+/** Turns errors into something a person can act on. */
+function friendlyError(e: unknown): string {
+  if (e instanceof SpotifyError) {
+    if (e.status === 403) {
+      return "Spotify won't share this account's listening with Festify yet. While Festify is in Spotify's testing mode, only invited accounts can log in, so ask whoever sent you the link to add your Spotify email.";
+    }
+    if (e.status === 401) return 'Your Spotify session expired. Please log in again.';
+    if (e.status === 429) return 'Spotify is getting a lot of requests right now. Wait a minute, then try again.';
+    if (e.status >= 500) return 'Spotify is having trouble right now. Try again in a minute.';
+  }
+  if (e instanceof TypeError) return "Couldn't reach Spotify. Check your internet connection and try again.";
+  const message = e instanceof Error ? e.message : String(e);
+  if (/token request failed/i.test(message)) return "Spotify sign-in didn't finish. Please try logging in again.";
+  return message;
+}
+
+/** e.g. "Primavera Sound Barcelona, Slam Dunk Festival and Glastonbury Festival". */
 const festivalList = new Intl.ListFormat('en-GB', { type: 'conjunction' }).format(festivals.map((f) => f.name));
 
 export default function App() {
@@ -56,8 +75,9 @@ export default function App() {
       setState({ kind: 'ready', profile, demo: false });
     } catch (e) {
       console.error(e);
+      if (e instanceof SpotifyError && e.status === 401) logout();
       if (!isLoggedIn()) setState({ kind: 'signedOut', error: 'Your Spotify session expired. Please log in again.' });
-      else setState({ kind: 'error', error: e instanceof Error ? e.message : String(e) });
+      else setState({ kind: 'error', error: friendlyError(e) });
     }
   }, []);
 
@@ -67,7 +87,8 @@ export default function App() {
       try {
         error = await handleRedirect();
       } catch (e) {
-        error = e instanceof Error ? e.message : String(e);
+        console.error(e);
+        error = friendlyError(e);
       }
       if (isLoggedIn()) await load();
       else setState({ kind: 'signedOut', error: error ?? undefined });
@@ -82,14 +103,43 @@ export default function App() {
     }
   }, [festivalId]);
 
+  // Big lineups (Glastonbury) download separately when picked.
+  const [loaded, setLoaded] = useState<{ id: string; acts: Act[] | null; failed?: boolean }>(() => ({
+    id: festival.id,
+    acts: lineupOf(festival),
+  }));
+  const lineup = loaded.id === festival.id ? loaded.acts : lineupOf(festival);
+  const lineupFailed = loaded.id === festival.id && Boolean(loaded.failed);
+  const fetchLineup = useCallback(() => {
+    setLoaded({ id: festival.id, acts: lineupOf(festival) });
+    if (lineupOf(festival)) return undefined;
+    let live = true;
+    loadLineup(festival)
+      .then((acts) => live && setLoaded({ id: festival.id, acts }))
+      .catch((e) => {
+        console.error(e);
+        if (live) setLoaded({ id: festival.id, acts: null, failed: true });
+      });
+    return () => {
+      live = false;
+    };
+  }, [festival]);
+  useEffect(fetchLineup, [fetchLineup]);
+
   // The demo listener is invented per festival, so make a new one on switching.
   const isDemo = state.kind === 'ready' && state.demo;
   useEffect(() => {
-    if (isDemo) setState({ kind: 'ready', profile: demoProfile(festival), demo: true });
-  }, [festival, isDemo]);
+    if (isDemo && lineup) setState({ kind: 'ready', profile: demoProfile(lineup), demo: true });
+  }, [lineup, isDemo]);
 
   const profile = state.kind === 'ready' ? state.profile : null;
-  const acts = useMemo(() => (profile ? curate(festival, profile) : []), [festival, profile]);
+  const acts = useMemo(() => (profile && lineup ? curate(lineup, profile) : []), [lineup, profile]);
+  const editionName = `${festival.name} ${festival.edition}`;
+
+  useEffect(() => {
+    document.title =
+      state.kind === 'ready' ? `${state.demo ? 'Demo' : 'Your'} ${editionName} lineup · Festify` : DEFAULT_TITLE;
+  }, [state, editionName]);
 
   const signOut = () => {
     logout();
@@ -99,7 +149,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <header className="topbar">
+      <header className="topbar" inert={selected ? true : undefined}>
         <a className="brand" href={import.meta.env.BASE_URL}>
           festify<span className="brand-star">*</span>
         </a>
@@ -128,7 +178,9 @@ export default function App() {
         </label>
         {state.kind === 'ready' && (
           <div className="user">
-            <span className="user-name">{state.profile.displayName}</span>
+            <span className="user-name" title={state.profile.displayName}>
+              {state.profile.displayName}
+            </span>
             {!state.demo && (
               <button type="button" className="link-button" onClick={() => load(true)}>
                 Refresh
@@ -141,8 +193,15 @@ export default function App() {
         )}
       </header>
 
-      <main>
-        {state.kind === 'starting' && <p className="status">Loading…</p>}
+      <main inert={selected ? true : undefined}>
+        {state.kind === 'starting' && (
+          <section className="status" aria-busy="true">
+            <p>Loading…</p>
+            <div className="progress progress-indeterminate">
+              <div />
+            </div>
+          </section>
+        )}
 
         {state.kind === 'signedOut' && (
           <section className="welcome">
@@ -171,7 +230,7 @@ export default function App() {
               <button
                 type="button"
                 className="secondary"
-                onClick={() => setState({ kind: 'ready', profile: demoProfile(festival), demo: true })}
+                onClick={() => setState({ kind: 'ready', profile: demoProfile(lineup ?? []), demo: true })}
               >
                 Try it with demo data
               </button>
@@ -193,43 +252,84 @@ export default function App() {
         )}
 
         {state.kind === 'error' && (
-          <section className="status">
+          <section className="status" role="alert">
+            <h1 className="status-title">Couldn't build your poster</h1>
             <p className="error">{state.error}</p>
-            <button type="button" className="primary" onClick={() => load(true)}>
-              Try again
-            </button>{' '}
-            <button type="button" className="secondary" onClick={signOut}>
-              Log out
-            </button>
+            <div className="status-actions">
+              <button type="button" className="primary" onClick={() => load(true)}>
+                Try again
+              </button>
+              <button type="button" className="secondary" onClick={signOut}>
+                Log out
+              </button>
+            </div>
           </section>
         )}
 
         {state.kind === 'ready' && (
           <div className="result">
+            <h1 className="visually-hidden">
+              {state.demo ? 'Demo' : 'Your'} {editionName} lineup
+            </h1>
             {state.demo && (
               <p className="demo-banner">Demo data: these are made-up listening stats.</p>
             )}
             <div className="poster-wrap">
-              <Poster
-                ref={posterRef}
-                festival={festival}
-                acts={acts}
-                curatedFor={state.profile.displayName}
-                onSelect={setSelected}
-              />
+              {lineup ? (
+                <Poster
+                  ref={posterRef}
+                  festival={festival}
+                  acts={acts}
+                  curatedFor={state.profile.displayName}
+                  onSelect={setSelected}
+                />
+              ) : (
+                <div
+                  className="poster-placeholder"
+                  style={{ aspectRatio: `${festival.width} / ${festival.height}` }}
+                  aria-busy={!lineupFailed}
+                >
+                  {lineupFailed ? (
+                    <>
+                      <p>Couldn't load the {festival.name} lineup.</p>
+                      <button type="button" className="secondary" onClick={fetchLineup}>
+                        Try again
+                      </button>
+                    </>
+                  ) : (
+                    <p>Loading the {festival.name} lineup…</p>
+                  )}
+                </div>
+              )}
             </div>
 
             <aside className="sidebar">
               <div className="summary">
-                <strong>{acts.length}</strong> of {festival.lineup.length} acts on your poster
-                <PosterActions
-                  posterRef={posterRef}
-                  version={`${festival.id}|${state.profile.userId}|${state.profile.fetchedAt}`}
-                  filename={`my-${festival.id}-lineup.png`}
-                  width={festival.width}
-                  shareText={`My personal ${festival.name} ${festival.edition} lineup, made with Festify:`}
-                />
+                <p className="summary-count">
+                  {lineup ? (
+                    <>
+                      <strong>{acts.length}</strong> of {lineup.length.toLocaleString()} acts on your poster
+                    </>
+                  ) : (
+                    'Loading lineup…'
+                  )}
+                </p>
+                {lineup && acts.length > 0 && (
+                  <PosterActions
+                    posterRef={posterRef}
+                    version={`${festival.id}|${state.profile.userId}|${state.profile.fetchedAt}`}
+                    filename={`my-${festival.id}-lineup.png`}
+                    width={festival.width}
+                    shareText={`My personal ${editionName} lineup, made with Festify:`}
+                  />
+                )}
               </div>
+              {lineup && acts.length === 0 && (
+                <p className="empty-note">
+                  None of your artists are on this lineup. Try another festival from the menu
+                  {state.demo ? '' : ', or press Refresh if you’ve been listening to new music lately'}.
+                </p>
+              )}
               {state.profile.warnings.length > 0 && (
                 <p className="warning">
                   Spotify didn't share your {state.profile.warnings.join(', ')}, so the lineup may be
@@ -262,7 +362,7 @@ export default function App() {
         />
       )}
 
-      <footer className="footer">
+      <footer className="footer" inert={selected ? true : undefined}>
         Unofficial fan project. Not affiliated with any festival or with Spotify. Data from Spotify.
       </footer>
     </div>

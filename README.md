@@ -39,6 +39,10 @@ The "Try it with demo data" button works without any Spotify setup.
 4. Optional: `npm run resolve-ids -- src/festivals/<id>.ts` (needs `SPOTIFY_CLIENT_SECRET` in `.env.local`)
    finds Spotify IDs. Acts without an ID are matched by name.
 
+## Brand assets
+
+`node scripts/make-brand-assets.mjs` regenerates the favicon, home-screen icon and social preview image (`public/og-image.png`).
+
 ## Deploying
 
 - **GitHub Pages:** pushing to `main` runs `.github/workflows/deploy.yml`. Set the repo variable `SPOTIFY_CLIENT_ID`

@@ -1,5 +1,5 @@
 import { normalizeName } from './curate';
-import type { Festival } from './festivals';
+import type { Act } from './festivals';
 import { TIME_RANGES, type ArtistStats, type ListeningProfile } from './spotify/profile';
 
 /** Deterministic PRNG so the demo poster is stable between reloads. */
@@ -22,12 +22,12 @@ const SONG_WORDS = [
  * A made-up listener who likes a random ~45 acts from the lineup, with a
  * deliberately undercard-heavy taste so the reshuffled poster is obvious.
  */
-export function demoProfile(festival: Festival): ListeningProfile {
+export function demoProfile(lineup: Act[]): ListeningProfile {
   const rand = mulberry32(2027);
   const pickWord = () => SONG_WORDS[Math.floor(rand() * SONG_WORDS.length)];
-  const members = festival.lineup.flatMap((a) => a.members.map((m) => ({ m, billing: a.billing })));
+  const members = lineup.flatMap((a) => a.members.map((m) => ({ m, billing: a.billing })));
   // Full lineups (thousands of small acts) get a much lower pick rate past the poster.
-  const deepCut = festival.lineup.length > 300 ? 0.008 : 0.1;
+  const deepCut = lineup.length > 300 ? 0.008 : 0.1;
   const chosen = members.filter(({ billing }) => rand() < ([0.45, 0.35, 0.3, 0.12][billing] ?? deepCut));
 
   const profile: ListeningProfile = {

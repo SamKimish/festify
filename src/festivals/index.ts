@@ -14,6 +14,7 @@ export const festivalsByEdition: [string, Festival[]][] = [
   ...festivals.reduce((groups, f) => groups.set(f.edition, [...(groups.get(f.edition) ?? []), f]), new Map<string, Festival[]>()),
 ];
 
+export { lineupOf, loadLineup } from './lineup';
 export type {
   Act,
   ActMember,

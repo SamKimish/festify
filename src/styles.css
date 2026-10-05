@@ -7,6 +7,9 @@
   --accent: #e25a1d;
   --spotify: #1db954;
   --error: #c2233a;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-pill: 999px;
   font-family: 'Archivo Variable', 'Helvetica Neue', Arial, sans-serif;
   color: var(--text);
   background: var(--bg);
@@ -41,18 +44,18 @@ button { font: inherit; color: inherit; }
 .brand { color: inherit; text-decoration: none; font-weight: 800; font-size: 26px; letter-spacing: -0.02em; font-variation-settings: 'wdth' 90; }
 .brand-star { color: var(--accent); }
 .festival-picker select {
-  font: inherit; font-weight: 600; padding: 8px 12px; border-radius: 999px;
+  font: inherit; font-weight: 600; padding: 8px 12px; border-radius: var(--radius-pill);
   border: 1px solid var(--line); background: var(--surface); color: var(--text);
 }
 .user { margin-left: auto; display: flex; gap: 14px; align-items: center; font-size: 14px; }
-.user-name { font-weight: 600; }
+.user-name { font-weight: 600; max-width: 40vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .link-button { background: none; border: none; padding: 0; cursor: pointer; color: var(--muted); text-decoration: underline; }
 
 main { flex: 1; padding: 24px; }
 
 /* ---------- Buttons ---------- */
 .primary, .secondary {
-  border-radius: 999px; padding: 12px 22px; font-weight: 700; cursor: pointer; border: 2px solid var(--text);
+  border-radius: var(--radius-pill); padding: 12px 22px; font-weight: 700; cursor: pointer; border: 2px solid var(--text);
 }
 .primary { background: var(--text); color: var(--bg); }
 .secondary { background: transparent; }
@@ -80,7 +83,7 @@ main { flex: 1; padding: 24px; }
   gap: 28px; justify-content: center; align-items: start;
 }
 .demo-banner {
-  grid-column: 1 / -1; margin: 0; padding: 10px 14px; border-radius: 8px;
+  grid-column: 1 / -1; margin: 0; padding: 10px 14px; border-radius: var(--radius-sm);
   background: #fff3c4; color: #5a4a00; font-size: 14px;
 }
 @media (max-width: 900px) {
@@ -149,7 +152,7 @@ main { flex: 1; padding: 24px; }
 }
 .modal {
   position: relative; width: min(520px, 100%); max-height: calc(100vh - 32px); overflow-y: auto;
-  background: var(--surface); color: var(--text); border-radius: 14px; padding: 28px; outline: none;
+  background: var(--surface); color: var(--text); border-radius: var(--radius-md); padding: 28px; outline: none;
   animation: pop 0.18s ease-out;
 }
 @keyframes fade { from { opacity: 0; } }
@@ -161,6 +164,9 @@ main { flex: 1; padding: 24px; }
 .modal-act { margin: 0 0 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; font-size: 13px; }
 .artist + .artist { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--line); }
 .artist-head { display: flex; gap: 20px; align-items: center; }
+.artist-head > div { min-width: 0; }
+/* Keep the first name clear of the close button. */
+.modal > .artist:first-of-type .artist-head > div, .modal-act { padding-right: 28px; }
 .artist-image { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; flex: none; }
 .artist-image-empty { display: grid; place-items: center; color: #fff; font-size: 48px; font-weight: 800; }
 .artist-name {
@@ -185,7 +191,7 @@ main { flex: 1; padding: 24px; }
 .song-text a:hover { text-decoration: underline; }
 .song-text small { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .song-tags { display: flex; gap: 6px; }
-.tag { font-size: 11px; padding: 3px 8px; border-radius: 999px; background: var(--bg); white-space: nowrap; }
+.tag { font-size: 11px; padding: 3px 8px; border-radius: var(--radius-pill); background: var(--bg); white-space: nowrap; }
 .tag-liked { color: var(--spotify); }
 @media (max-width: 480px) {
   .modal { padding: 22px 18px; }
@@ -201,18 +207,18 @@ main { flex: 1; padding: 24px; }
 .poster-actions { position: relative; display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
 .share-menu {
   position: absolute; top: calc(100% + 8px); left: 0; z-index: 5; width: min(300px, 100%);
-  display: flex; flex-direction: column; padding: 6px; border-radius: 12px;
+  display: flex; flex-direction: column; padding: 6px; border-radius: var(--radius-md);
   background: var(--surface); border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 .share-menu button, .share-menu a {
-  text-align: left; padding: 10px 12px; border: 0; border-radius: 8px; background: none;
+  text-align: left; padding: 10px 12px; border: 0; border-radius: var(--radius-sm); background: none;
   color: var(--text); font-weight: 600; text-decoration: none; cursor: pointer;
 }
 .share-menu button:hover, .share-menu a:hover { background: var(--bg); }
 .share-hint { margin: 4px 12px 8px; font-size: 12px; color: var(--muted); }
 .toast {
   position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 20;
-  padding: 12px 18px; border-radius: 999px; background: var(--text); color: var(--bg);
+  padding: 12px 18px; border-radius: var(--radius-pill); background: var(--text); color: var(--bg);
   font-size: 14px; font-weight: 600; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
@@ -243,7 +249,7 @@ main { flex: 1; padding: 24px; }
   .festival-picker select { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
   .festival-picker select::picker-icon { content: '▾'; color: var(--muted); }
   .festival-picker select::picker(select) {
-    margin-top: 6px; padding: 6px; border: 1px solid var(--line); border-radius: 14px;
+    margin-top: 6px; padding: 6px; border: 1px solid var(--line); border-radius: var(--radius-md);
     background: var(--surface); color: var(--text); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   }
   .festival-picker optgroup::label,
@@ -253,7 +259,7 @@ main { flex: 1; padding: 24px; }
   }
   .festival-picker optgroup.coming-soon { text-transform: none; letter-spacing: 0; font-size: 13px; }
   .festival-picker option {
-    padding: 8px 10px; border-radius: 8px; font-size: 15px; letter-spacing: 0; text-transform: none;
+    padding: 8px 10px; border-radius: var(--radius-sm); font-size: 15px; letter-spacing: 0; text-transform: none;
     color: var(--text);
   }
   .festival-picker option:not(:disabled):hover,
@@ -263,7 +269,7 @@ main { flex: 1; padding: 24px; }
 }
 
 /* ---------- Day-split posters ---------- */
-.day-block { display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.day-block { display: flex; flex-direction: column; justify-content: flex-start; align-items: center; }
 .day-line { display: flex; justify-content: center; align-items: baseline; white-space: nowrap; line-height: 1.15; }
 .day-name {
   background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; cursor: pointer;
@@ -274,3 +280,33 @@ main { flex: 1; padding: 24px; }
 .measure .day-name { display: inline-block; }
 .measure > span.day-name { display: block; width: max-content; }
 .days-empty { position: absolute; left: 10%; width: 80%; top: 36%; text-align: center; }
+
+/* ---------- States & small fixes ---------- */
+a.primary, a.secondary { display: inline-block; text-decoration: none; text-align: center; }
+.primary:focus-visible, .secondary:focus-visible, .link-button:focus-visible, .brand:focus-visible,
+.festival-picker select:focus-visible, .ranking button:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 3px;
+}
+.status-title { font-size: 24px; margin: 0 0 8px; }
+.status-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+.progress-indeterminate div { width: 35%; animation: indeterminate 1.1s ease-in-out infinite; }
+@keyframes indeterminate { from { transform: translateX(-100%); } to { transform: translateX(290%); } }
+@media (prefers-reduced-motion: reduce) {
+  .progress-indeterminate div { animation: none; width: 100%; opacity: 0.4; }
+  .modal, .modal-backdrop { animation: none; }
+}
+.poster-placeholder {
+  display: grid; place-items: center; align-content: center; gap: 16px; width: 100%;
+  background: var(--surface); color: var(--muted); text-align: center; padding: 24px;
+}
+.poster-placeholder p { margin: 0; }
+.summary-count { margin: 0; }
+.empty-note { color: var(--muted); font-size: 14px; line-height: 1.5; }
+@media (max-width: 480px) {
+  .welcome-actions .primary, .welcome-actions .secondary { width: 100%; }
+}
+@media (max-width: 380px) {
+  .topbar { gap: 10px; }
+  .brand { font-size: 22px; }
+  .festival-picker select { font-size: 14px; padding: 6px 10px; }
+}

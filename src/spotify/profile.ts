@@ -188,7 +188,9 @@ export async function fetchProfile(onProgress: Progress): Promise<ListeningProfi
         if (!trackId) return;
         for (const a of t.artists) {
           if (!a.id) continue;
-          artist(a.id, a.name).topTracks.push({ trackId, range, rank: offset + i });
+          const stats = artist(a.id, a.name);
+          stats.url ??= a.external_urls?.spotify;
+          stats.topTracks.push({ trackId, range, rank: offset + i });
         }
       });
     }
@@ -244,7 +246,10 @@ export async function fetchProfile(onProgress: Progress): Promise<ListeningProfi
         const trackId = addTrack(track);
         if (!trackId) continue;
         for (const a of track.artists) {
-          if (a.id) artist(a.id, a.name).liked.push({ trackId, addedAt: added_at });
+          if (!a.id) continue;
+          const stats = artist(a.id, a.name);
+          stats.url ??= a.external_urls?.spotify;
+          stats.liked.push({ trackId, addedAt: added_at });
         }
       }
     }

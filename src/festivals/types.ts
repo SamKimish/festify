@@ -64,7 +64,10 @@ interface FestivalBase {
   width: number;
   height: number;
   theme: FestivalTheme;
+  /** The acts, or [] when they're loaded on demand with `loadLineup`. */
   lineup: Act[];
+  /** For big lineups: loads the acts in a separate download when the festival is picked. */
+  loadLineup?: () => Promise<Act[]>;
 }
 
 /** Text lineup flowing through columns (e.g. Primavera Sound). */

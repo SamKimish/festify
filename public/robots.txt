@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://samkimish.github.io/festify/sitemap.xml

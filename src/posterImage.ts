@@ -1,7 +1,6 @@
-import { toBlob } from 'html-to-image';
-
 const baseOptions = {
-  cacheBust: true,
+  // Only embed the woff2 files (browsers that render the poster all support them).
+  preferredFontFormat: 'woff2',
   // Skip the hidden word-measuring layer.
   filter: (node: HTMLElement) => !(node instanceof HTMLElement && node.classList.contains('measure')),
 };
@@ -11,6 +10,8 @@ const baseOptions = {
  * own width), whatever size it's displayed at on screen.
  */
 export async function renderPoster(poster: HTMLElement, width: number): Promise<Blob> {
+  // Loaded on first use, so it isn't part of the initial download.
+  const { toBlob } = await import('html-to-image');
   const pixelRatio = Math.min(4, Math.max(1, width / poster.clientWidth));
   const options = { ...baseOptions, pixelRatio };
   // Safari often drops images and fonts on the first render, so warm up once.

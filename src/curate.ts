@@ -1,4 +1,4 @@
-import type { Act, Festival } from './festivals';
+import type { Act } from './festivals';
 import {
   RANGE_LABEL,
   TIME_RANGES,
@@ -88,7 +88,7 @@ export function scoreArtists(profile: ListeningProfile): Map<string, ScoredArtis
 }
 
 /** The user's personal lineup for a festival: only acts they listen to, best first. */
-export function curate(festival: Festival, profile: ListeningProfile): CuratedAct[] {
+export function curate(lineup: Act[], profile: ListeningProfile): CuratedAct[] {
   const scored = scoreArtists(profile);
   const byName = new Map<string, ScoredArtist[]>();
   for (const s of scored.values()) {
@@ -96,9 +96,9 @@ export function curate(festival: Festival, profile: ListeningProfile): CuratedAc
     byName.set(key, [...(byName.get(key) ?? []), s]);
   }
 
-  const order = new Map(festival.lineup.map((act, i) => [act, i]));
+  const order = new Map(lineup.map((act, i) => [act, i]));
   const candidates: (CuratedAct & { direct: boolean })[] = [];
-  festival.lineup.forEach((act) => {
+  lineup.forEach((act) => {
     const matched = new Map<string, ScoredArtist>();
     for (const m of act.members) {
       const hits = m.spotifyId

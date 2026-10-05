@@ -1,5 +1,4 @@
 import { act } from './act';
-import data from './glastonbury-2025.lineup.json';
 import type { Act, DaysFestival } from './types';
 
 /**
@@ -22,11 +21,15 @@ function members(name: string): string[] {
 
 // Every act on every stage, from the festival website (scripts/parse-glastonbury.mjs):
 // [name, day section, billing, stage]. Billing 0–2 = lines on the official poster,
-// 3 = other main-stage acts, 4 = everything else.
-const lineup: Act[] = (data as [string, string, number, string][]).map(([name, day, billing]) => ({
-  ...act(name, billing, members(name)),
-  day,
-}));
+// 3 = other main-stage acts, 4 = everything else. ~2,500 acts, so it's a separate
+// download, fetched only when Glastonbury is picked.
+async function loadLineup(): Promise<Act[]> {
+  const { default: data } = await import('./glastonbury-2025.lineup.json');
+  return (data as [string, string, number, string][]).map(([name, day, billing]) => ({
+    ...act(name, billing, members(name)),
+    day,
+  }));
+}
 
 export const glastonbury2025: DaysFestival = {
   id: 'glastonbury-2025',
@@ -53,5 +56,6 @@ export const glastonbury2025: DaysFestival = {
     { label: 'SATURDAY', zone: { x: 10, y: 52, w: 80, h: 16.5 }, topColor: '#f3f0f7', restColor: '#bab7dc' },
     { label: 'SUNDAY', zone: { x: 10, y: 73.8, w: 80, h: 18.2 }, topColor: '#f6e9b0', restColor: '#e9c04e' },
   ],
-  lineup,
+  lineup: [],
+  loadLineup,
 };
