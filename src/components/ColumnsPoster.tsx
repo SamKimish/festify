@@ -16,9 +16,13 @@ const HEADLINER_MAX = 13;
 /** Must match `.name-hl` in styles.css. */
 const HEADLINER_LINE_HEIGHT = 1;
 const GROUPS = {
-  mid: { base: 2.35, max: 1 },
-  small: { base: 1.75, max: 1 },
+  mid: { base: 2.35, max: 1.7 },
+  small: { base: 1.75, max: 1.65 },
 } as const;
+/** Second-tier names stay at most this fraction of the smallest headliner… */
+const MID_TO_HEADLINER = 0.72;
+/** …and small print at most this fraction of the second tier's largest size. */
+const SMALL_TO_MID = 0.85;
 type Group = keyof typeof GROUPS;
 const MIN_SCALE = 0.3;
 /** Must match `.name` in styles.css. */
@@ -26,7 +30,11 @@ const LINE_HEIGHT = 1.04;
 const WRAP_INDENT = 1.1;
 /** Font size the words are measured at; widths scale linearly from it. */
 const MEASURE_PX = 100;
-/** With room to spare, aim for this many second-tier acts before using the small print. */
+/**
+ * When everything fits at full size, aim for this share of acts in the second
+ * tier (the rest fill the small-print area), up to PREFERRED_MID.
+ */
+const PREFERRED_MID_SHARE = 0.6;
 const PREFERRED_MID = 30;
 
 const pct = (z: Zone): CSSProperties => ({
@@ -209,7 +217,8 @@ export const ColumnsPoster = forwardRef<HTMLDivElement, Props>(function ColumnsP
       if (totalAt(t) <= available) lo = t;
       else hi = t;
     }
-    hlEls.forEach((el, i) => (el.style.fontSize = `${Math.min(widthFit[i], lo)}cqw`));
+    const hlSizes = widthFit.map((f) => Math.min(f, lo));
+    hlEls.forEach((el, i) => (el.style.fontSize = `${hlSizes[i]}cqw`));
     const posterTop = poster.getBoundingClientRect().top;
     const headerBottom = hlEls.length
       ? ((Math.max(...hlEls.map((el) => el.getBoundingClientRect().bottom)) - posterTop) / H) * 100 + 0.8
@@ -232,19 +241,26 @@ export const ColumnsPoster = forwardRef<HTMLDivElement, Props>(function ColumnsP
 
     const basePx = { mid: (GROUPS.mid.base * W) / 100, small: (GROUPS.small.base * W) / 100 };
     const indices = rest.map((_, i) => i);
+    // Short lineups can print bigger, but never rival the headliners.
+    const smallestHl = hlSizes.length ? Math.min(...hlSizes) : HEADLINER_SIZE;
+    const midMax = Math.min(GROUPS.mid.max, (MID_TO_HEADLINER * smallestHl) / GROUPS.mid.base);
+    const max = {
+      mid: midMax,
+      small: Math.min(GROUPS.small.max, (SMALL_TO_MID * midMax * GROUPS.mid.base) / GROUPS.small.base),
+    };
     const scaleFor = (group: Group, items: number[]) =>
-      bestScale(items, words, space, boxes[group], basePx[group], GROUPS[group].max);
+      bestScale(items, words, space, boxes[group], basePx[group], max[group]);
 
     // Split the rest between second tier and small print so both print as large as
-    // possible; when everything fits comfortably, keep about PREFERRED_MID up top.
-    const target = Math.min(PREFERRED_MID, rest.length);
+    // possible; when everything fits at full size, keep ~60% (up to PREFERRED_MID) up top.
+    const target = Math.min(PREFERRED_MID, Math.ceil(rest.length * PREFERRED_MID_SHARE));
     let best = { k: 0, mid: 0, small: 0, score: -1 };
     for (let k = 0; k <= rest.length; k++) {
       const mid = scaleFor('mid', indices.slice(0, k));
       const small = scaleFor('small', indices.slice(k));
       const score = Math.min(
-        k ? mid / GROUPS.mid.max : Infinity,
-        k < rest.length ? small / GROUPS.small.max : Infinity,
+        k ? mid / max.mid : Infinity,
+        k < rest.length ? small / max.small : Infinity,
       );
       if (
         score > best.score + 1e-4 ||
@@ -263,6 +279,17 @@ export const ColumnsPoster = forwardRef<HTMLDivElement, Props>(function ColumnsP
   }, [acts, festival]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useLayoutEffect(runLayout, [runLayout, fontsReady]);
+
+  // The wrap prediction can differ slightly between browsers (e.g. iOS Safari), so
+  // set the indent from the real rendered line count.
+  useLayoutEffect(() => {
+    const names = posterRef.current?.querySelectorAll<HTMLElement>('.col .name');
+    if (!names?.length) return;
+    for (let pass = 0; pass < 2; pass++) {
+      const heights = [...names].map((el) => [el, el.offsetHeight, parseFloat(getComputedStyle(el).lineHeight)] as const);
+      for (const [el, h, lh] of heights) el.classList.toggle('wrapped', h > lh * 1.5);
+    }
+  }, [layout]);
 
   useEffect(() => {
     const poster = posterRef.current;

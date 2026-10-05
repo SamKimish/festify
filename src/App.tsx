@@ -100,9 +100,9 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <div className="brand">
+        <a className="brand" href={import.meta.env.BASE_URL}>
           festify<span className="brand-star">*</span>
-        </div>
+        </a>
         <label className="festival-picker">
           <span className="visually-hidden">Festival</span>
           <select value={festivalId} onChange={(e) => setFestivalId(e.target.value)}>

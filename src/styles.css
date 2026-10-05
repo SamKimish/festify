@@ -38,7 +38,7 @@ button { font: inherit; color: inherit; }
   display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
   padding: 14px 24px; border-bottom: 1px solid var(--line);
 }
-.brand { font-weight: 800; font-size: 26px; letter-spacing: -0.02em; font-variation-settings: 'wdth' 90; }
+.brand { color: inherit; text-decoration: none; font-weight: 800; font-size: 26px; letter-spacing: -0.02em; font-variation-settings: 'wdth' 90; }
 .brand-star { color: var(--accent); }
 .festival-picker select {
   font: inherit; font-weight: 600; padding: 8px 12px; border-radius: 999px;
