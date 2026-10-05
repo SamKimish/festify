@@ -39,20 +39,35 @@ export function PosterActions({ posterRef, version, filename, shareText, width }
   }, [menuOpen]);
   const siteUrl = new URL(import.meta.env.BASE_URL, window.location.origin).toString();
 
+  // Bumped whenever the poster changes on screen (fonts arriving, photos
+  // loading, relayout on resize…), so a pre-rendered image is never stale.
+  const changes = useRef(0);
+  const cacheKey = () => `${version}|${changes.current}`;
+
   const getBlob = () => {
     if (!posterRef.current) return Promise.reject(new Error('No poster'));
-    if (cache.current?.version !== version) {
+    if (cache.current?.version !== cacheKey()) {
       const blob = renderPoster(posterRef.current, width);
       blob.catch(() => (cache.current = null));
-      cache.current = { version, blob };
+      cache.current = { version: cacheKey(), blob };
     }
     return cache.current.blob;
   };
 
-  // Pre-render once the poster has settled.
+  // Pre-render once the poster has settled, and again after it changes.
   useEffect(() => {
-    const timer = setTimeout(() => getBlob().catch(() => {}), 800);
-    return () => clearTimeout(timer);
+    const poster = posterRef.current;
+    let timer = setTimeout(() => getBlob().catch(() => {}), 800);
+    const observer = new MutationObserver(() => {
+      changes.current++;
+      clearTimeout(timer);
+      timer = setTimeout(() => getBlob().catch(() => {}), 800);
+    });
+    if (poster) observer.observe(poster, { subtree: true, childList: true, attributes: true, characterData: true });
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [version]);
 
@@ -62,9 +77,10 @@ export function PosterActions({ posterRef, version, filename, shareText, width }
     return () => clearTimeout(timer);
   }, [toast]);
 
-  // Phones save downloads to Files (iOS) or Downloads; the share sheet's "Save
-  // Image" puts the poster in Photos instead, so use that on touch devices.
-  const saveToPhotos = nativeShare && window.matchMedia('(pointer: coarse)').matches;
+  // Phones put browser downloads in Files (iOS) or Downloads. Instead, "Save
+  // image" shows the poster full-screen to press and hold → "Save to Photos",
+  // keeping it distinct from Share (which sends it to other apps).
+  const saveToPhotos = window.matchMedia('(pointer: coarse)').matches;
   const [preview, setPreview] = useState<string | null>(null);
 
   useEffect(() => {
@@ -79,21 +95,13 @@ export function PosterActions({ posterRef, version, filename, shareText, width }
 
   const download = async () => {
     setBusy('download');
-    let blob: Blob | null = null;
     try {
-      blob = await getBlob();
-      if (saveToPhotos) {
-        // Just the image (no text), so the sheet offers "Save Image".
-        await navigator.share({ files: [new File([blob], filename, { type: 'image/png' })] });
-      } else {
-        downloadBlob(blob, filename);
-      }
+      const blob = await getBlob();
+      if (saveToPhotos) setPreview(URL.createObjectURL(blob));
+      else downloadBlob(blob, filename);
     } catch (e) {
-      if (e instanceof DOMException && e.name === 'AbortError') return; // closed the sheet
       console.error(e);
-      // Fallback: show the image so it can be pressed and held → "Save to Photos".
-      if (blob && saveToPhotos) setPreview(URL.createObjectURL(blob));
-      else setToast("Sorry, the poster couldn't be saved.");
+      setToast("Sorry, the poster couldn't be saved.");
     } finally {
       setBusy(null);
     }
@@ -170,7 +178,7 @@ export function PosterActions({ posterRef, version, filename, shareText, width }
         <div className="modal-backdrop save-preview" onClick={() => setPreview(null)}>
           <div className="save-preview-card" role="dialog" aria-modal="true" aria-label="Save your poster" onClick={(e) => e.stopPropagation()}>
             <img src={preview} alt="Your festival poster" />
-            <p>Press and hold the poster, then tap “Save to Photos”.</p>
+            <p>Press and hold the poster, then tap “Save to Photos” (or “Download image” on Android).</p>
             <div className="save-preview-actions">
               <button type="button" className="secondary small" onClick={() => setPreview(null)}>
                 Done
