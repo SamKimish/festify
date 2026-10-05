@@ -44,7 +44,12 @@ function splitName(name: string, width: (s: string) => number): string[] {
 interface HeadlinerLayout {
   sizes: number[]; // cqw, per headliner
   names: string[][]; // lines per headliner
+  /** Which line of a two-line name gets the flanking stars (the narrower one). */
+  flank: number[];
 }
+
+/** Width the two flanking stars add to a line, in em (see .photo-star). */
+const STARS_EM = 1.15;
 
 /** Short names may print bigger than long ones, but no more than this. */
 const MAX_NAME_RATIO = 1.35;
@@ -92,9 +97,11 @@ export const PhotosPoster = forwardRef<HTMLDivElement, Props>(function PhotosPos
     const nameHeight = H.zone.h * aspect * H.nameShare;
     const names = heads.map((a) => splitName(posterLabel(a), em));
     // Each name as big as its column allows, within MAX_NAME_RATIO of the smallest.
-    const fit = names.map((lines) =>
-      Math.min(colWidth / Math.max(0.1, ...lines.map(em)), nameHeight / (2 * NAME_LINE_HEIGHT), 9),
-    );
+    const flank = names.map((lines) => (lines.length === 2 && em(lines[1]) < em(lines[0]) ? 1 : 0));
+    const fit = names.map((lines, i) => {
+      const widths = lines.map((line, l) => em(line) + (lines.length === 2 && l === flank[i] ? STARS_EM : 0));
+      return Math.min(colWidth / Math.max(0.1, ...widths), nameHeight / (2 * NAME_LINE_HEIGHT), 9);
+    });
     const smallest = Math.min(...fit);
     const sizes = fit.map((f) => Math.min(f, smallest * MAX_NAME_RATIO));
 
@@ -107,7 +114,7 @@ export const PhotosPoster = forwardRef<HTMLDivElement, Props>(function PhotosPos
       measure,
       REST_LINES,
     );
-    setComputed({ acts, head: { sizes, names }, rest: lines });
+    setComputed({ acts, head: { sizes, names, flank }, rest: lines });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [acts, festival]);
 
@@ -149,7 +156,7 @@ export const PhotosPoster = forwardRef<HTMLDivElement, Props>(function PhotosPos
                   {lines.length === 1 && <span className="photo-star">★</span>}
                   {lines.map((line, l) => {
                     // Stars flank the shorter line of a two-line name, like the poster.
-                    const shorter = lines.length === 2 && line.length <= lines[1 - l].length && l === (lines[0].length <= lines[1].length ? 0 : 1);
+                    const shorter = lines.length === 2 && l === layout.head.flank[i];
                     return (
                       <span key={l} className="photo-line">
                         {shorter && <span className="photo-star">★</span>}
