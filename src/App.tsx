@@ -12,6 +12,9 @@ import {
   lineupOf,
   loadLineup,
   menuId,
+  DEFAULT_FESTIVAL_ID,
+  festName,
+  personalLineup,
   sitesOf,
   type Act,
 } from './festivals';
@@ -73,7 +76,7 @@ const write = (key: string, value: string) => {
 
 function storedFestival(): string {
   const id = read(FESTIVAL_KEY);
-  return id && festivals.some((f) => f.id === id) ? id : festivals[0].id;
+  return id && festivals.some((f) => f.id === id) ? id : DEFAULT_FESTIVAL_ID;
 }
 
 /** Turns errors into something a person can act on. */
@@ -103,7 +106,7 @@ function friendlyError(e: unknown): string {
 
 /** e.g. "Primavera Sound Barcelona, Slam Dunk Festival and Glastonbury Festival". */
 const festivalList = new Intl.ListFormat('en-GB', { type: 'conjunction' }).format([
-  ...new Set(festivals.map((f) => f.name)),
+  ...new Set(festivals.filter((f) => f.layout !== 'personal').map((f) => f.name)),
 ]);
 const SITE_KEY = 'festify.site';
 const PERIOD_KEY = 'festify.period';
@@ -193,7 +196,7 @@ export default function App() {
     id: festival.id,
     acts: lineupOf(festival),
   }));
-  const lineup = loaded.id === festival.id ? loaded.acts : lineupOf(festival);
+  const realLineup = loaded.id === festival.id ? loaded.acts : lineupOf(festival);
   const lineupFailed = loaded.id === festival.id && Boolean(loaded.failed);
   const fetchLineup = useCallback(() => {
     setLoaded({ id: festival.id, acts: lineupOf(festival) });
@@ -213,10 +216,19 @@ export default function App() {
 
   const profile = state.kind === 'ready' ? state.profile : null;
   const isDemo = profile?.source === 'demo';
+  // {Name}Fest's lineup is your own favourite artists.
+  const personal = festival.layout === 'personal';
+  const lineup = useMemo(
+    () => (personal ? (profile ? personalLineup(profile) : null) : realLineup),
+    [personal, profile, realLineup],
+  );
+  /** A real festival's lineup, for inventing a demo listener (yours has no lineup until you listen). */
+  const demoSource = () => (personal ? festivals.find((f) => f.id === DEFAULT_FESTIVAL_ID)!.lineup : (lineup ?? []));
 
   // The demo listener is invented per festival, so make a new one on switching.
   useEffect(() => {
-    if (isDemo && lineup) setState({ kind: 'ready', profile: demoProfile(lineup) });
+    // (Not for your own festival: its lineup comes from the demo listener itself.)
+    if (isDemo && lineup && !personal) setState({ kind: 'ready', profile: demoProfile(lineup) });
   }, [lineup, isDemo]);
 
   // Your edits (hide / headline / add), per festival.
@@ -261,13 +273,15 @@ export default function App() {
     () => (lineup ? buildPoster(listened, activeSuggestions, lineup, edits) : { acts: [], hidden: [] }),
     [listened, activeSuggestions, lineup, edits],
   );
-  const editionName = `${festival.name} ${festival.edition}`;
+  const editionName = personal ? festName(profile) : `${festival.name} ${festival.edition}`;
 
   useEffect(() => {
-    document.title = profile
-      ? `${isDemo ? 'Demo' : 'Your'} ${editionName} lineup · Festify`
-      : DEFAULT_TITLE;
-  }, [profile, isDemo, editionName]);
+    document.title = !profile
+      ? DEFAULT_TITLE
+      : personal
+        ? `${editionName} · Festify`
+        : `${isDemo ? 'Demo' : 'Your'} ${editionName} lineup · Festify`;
+  }, [profile, isDemo, editionName, personal]);
 
   const signOut = () => {
     logout();
@@ -303,7 +317,7 @@ export default function App() {
               <optgroup key={edition} label={edition}>
                 {list.map((f) => (
                   <option key={f.id} value={f.id}>
-                    {f.name}
+                    {f.layout === 'personal' ? festName(profile) : f.name}
                   </option>
                 ))}
               </optgroup>
@@ -362,7 +376,7 @@ export default function App() {
                 return importSpotifyExport(files, periodRef.current, p);
               }, true)
             }
-            onDemo={() => setState({ kind: 'ready', profile: demoProfile(lineup ?? []) })}
+            onDemo={() => setState({ kind: 'ready', profile: demoProfile(demoSource()) })}
           />
         )}
 
@@ -458,7 +472,8 @@ export default function App() {
               edits={edits}
               onEdits={setEdits}
               suggestions={{
-                available: lastfmConfigured && !isDemo,
+                // (Your own festival only has artists you already love.)
+                available: lastfmConfigured && !isDemo && !personal,
                 enabled: suggestOn,
                 loading: suggested.loading && suggested.key === suggestKey,
                 failed: suggested.failed && suggested.key === suggestKey,

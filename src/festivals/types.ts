@@ -145,4 +145,12 @@ export interface PhotosFestival extends FestivalBase {
   colors: { names: string; photoTint: string; label: string; separator: string; credit: string };
 }
 
-export type Festival = ColumnsFestival | ReelsFestival | DaysFestival | PhotosFestival;
+/**
+ * A made-up festival starring the listener's own favourite artists
+ * ("{Name}Fest"); the lineup is built from their listening, not a real bill.
+ */
+export interface PersonalFestival extends FestivalBase {
+  layout: 'personal';
+}
+
+export type Festival = ColumnsFestival | ReelsFestival | DaysFestival | PhotosFestival | PersonalFestival;

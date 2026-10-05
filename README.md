@@ -16,6 +16,9 @@ every window at once, counted back from the newest play in the file, so switchin
 
 ## Extras
 
+- **{Name}Fest:** a made-up festival headlined by your own top 36 artists, drawn entirely in code as a two-ink
+  risograph print (`src/components/PersonalPoster.tsx`, `src/festivals/personal.ts`). The name comes from your first name.
+
 - **Edit your poster:** hide acts, force acts to headline, or add acts from the lineup you love but don't stream.
   Saved per festival in the browser (`src/posterEdits.ts`).
 - **You might like:** a toggle that adds lineup acts similar to your top artists, via Last.fm's similar-artists data,

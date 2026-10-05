@@ -1,11 +1,15 @@
 import { glastonbury2025 } from './glastonbury-2025';
+import { personalFest } from './personal';
 import { primaveraSound2027 } from './primavera-sound-2027';
 import { leeds2026, reading2026 } from './reading-leeds-2026';
 import { slamDunk2027 } from './slam-dunk-2027';
 import type { Festival } from './types';
 
 /** Festivals shown in the drop-down, in display order. */
-export const festivals: Festival[] = [primaveraSound2027, slamDunk2027, reading2026, leeds2026, glastonbury2025];
+export const festivals: Festival[] = [personalFest, primaveraSound2027, slamDunk2027, reading2026, leeds2026, glastonbury2025];
+
+/** Where first-time visitors start. */
+export const DEFAULT_FESTIVAL_ID = primaveraSound2027.id;
 
 /** Shown greyed out in the drop-down until their lineups are in. */
 export const comingSoon: string[] = [];
@@ -24,6 +28,7 @@ export const festivalsByEdition: [string, Festival[]][] = [
 ];
 
 export { lineupOf, loadLineup } from './lineup';
+export { festName, personalLineup } from './personal';
 export type {
   Act,
   ActMember,
@@ -31,6 +36,7 @@ export type {
   DaysFestival,
   DaySection,
   Festival,
+  PersonalFestival,
   PhotosFestival,
   ReelsFestival,
   Region,

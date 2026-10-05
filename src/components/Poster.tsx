@@ -1,9 +1,10 @@
 import { forwardRef } from 'react';
 import type { CuratedAct } from '../curate';
-import type { Festival } from '../festivals';
+import { festName, type Festival } from '../festivals';
 import type { ListeningProfile } from '../spotify/profile';
 import { ColumnsPoster } from './ColumnsPoster';
 import { DaysPoster } from './DaysPoster';
+import { PersonalPoster } from './PersonalPoster';
 import { PhotosPoster } from './PhotosPoster';
 import { ReelsPoster } from './ReelsPoster';
 
@@ -29,6 +30,17 @@ export const Poster = forwardRef<HTMLDivElement, Props>(function Poster({ festiv
           acts={props.acts}
           profile={props.profile}
           curatedFor={props.curatedFor}
+          curatedVia={props.curatedVia}
+          onSelect={props.onSelect}
+        />
+      );
+    case 'personal':
+      return (
+        <PersonalPoster
+          ref={ref}
+          festival={festival}
+          acts={props.acts}
+          festName={festName(props.profile)}
           curatedVia={props.curatedVia}
           onSelect={props.onSelect}
         />

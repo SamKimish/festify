@@ -471,3 +471,83 @@ a.primary, a.secondary { display: inline-block; text-decoration: none; text-alig
   border: 1px solid var(--line); background: var(--surface); color: var(--text); cursor: pointer;
 }
 .period-picker select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- {Name}Fest: two-ink risograph print ---------- */
+.pf {
+  --pf-paper: #f4eee2;
+  --pf-pink: #ff4fa3;
+  --pf-blue: #2340c8;
+  --pf-list: 2.5cqw;
+  --pf-word: 20cqw;
+  background: var(--pf-paper); color: var(--pf-blue); isolation: isolate;
+}
+.pf .pf-ink-blue { color: var(--pf-blue); }
+.pf .pf-ink-pink { color: var(--pf-pink); }
+/* Inks overprint like a riso: overlaps turn purple. */
+.pf-sun, .pf-halftone, .pf-blob, .pf-word-line, .pf-head, .pf-name, .pf-day-label { mix-blend-mode: multiply; }
+.pf-sun {
+  position: absolute; width: 58cqw; height: 58cqw; right: -14cqw; top: -12cqw; border-radius: 50%;
+  background: var(--pf-pink);
+}
+.pf-halftone {
+  position: absolute; width: 52cqw; height: 52cqw; right: -6cqw; top: -2cqw; border-radius: 50%;
+  background: radial-gradient(circle, var(--pf-blue) 0 28%, transparent 31%) 0 0 / 1.6cqw 1.6cqw;
+  opacity: 0.85;
+}
+.pf-blob {
+  position: absolute; width: 34cqw; height: 22cqw; left: -10cqw; bottom: 9cqw;
+  background: var(--pf-pink); border-radius: 48% 52% 60% 40% / 55% 45% 55% 45%; opacity: 0.9;
+}
+.pf-grain {
+  position: absolute; inset: 0; pointer-events: none; opacity: 0.32; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.35 0 0 0 0 0.3 0 0 0 0 0.25 0 0 0 0.55 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+.pf-top { position: absolute; left: 6cqw; right: 6cqw; top: 5cqw; }
+.pf-kicker {
+  margin: 0 0 1.4cqw; font-weight: 700; font-size: 1.7cqw; letter-spacing: 0.32em; text-transform: uppercase;
+  font-variation-settings: 'wdth' 125;
+}
+.pf-word {
+  margin: 0; display: flex; flex-direction: column; font-size: var(--pf-word); line-height: 0.82;
+  font-weight: 900; font-variation-settings: 'wdth' 125; letter-spacing: -0.035em; text-transform: uppercase;
+}
+.pf-word-line { display: block; white-space: nowrap; }
+/* Misregistration: the pink plate sits a touch off the blue one. */
+.pf-word .pf-ink-pink { transform: translate(0.9cqw, -0.4cqw); }
+.pf-word-measure { position: absolute; visibility: hidden; font-size: 10cqw; white-space: nowrap; top: 0; left: 0; }
+.pf-meta {
+  display: flex; flex-wrap: wrap; gap: 0.6cqw 2.4cqw; margin: 2.6cqw 0 0;
+  font-weight: 700; font-size: 1.75cqw; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.pf-meta span { background: var(--pf-paper); padding: 0.2cqw 0.8cqw; }
+.pf-meta span + span::before { content: '✺'; color: var(--pf-pink); margin-right: 1.4cqw; }
+.pf-days {
+  position: absolute; left: 6cqw; right: 6cqw; top: var(--pf-days-top, 52%); bottom: 10.5%;
+  display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: minmax(0, 1fr); gap: 3cqw;
+}
+.pf-day { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; border-top: 0.5cqw solid var(--pf-blue); padding-top: 1.4cqw; }
+.pf-day-label {
+  align-self: flex-start; margin: 0 0 1.2cqw; padding: 0.35cqw 1.4cqw; border-radius: 99cqw;
+  background: var(--pf-pink); color: var(--pf-paper); font-weight: 800; font-size: 1.6cqw;
+  letter-spacing: 0.2em; text-transform: uppercase; font-variation-settings: 'wdth' 125;
+}
+.pf-head {
+  display: block; text-align: left; background: none; border: 0; padding: 0; margin: 0 0 1.2cqw; cursor: pointer;
+  font: inherit; color: var(--pf-blue); font-weight: 900; line-height: 0.95; white-space: nowrap;
+  text-transform: uppercase; font-variation-settings: 'wdth' 70; letter-spacing: -0.01em;
+}
+.pf-head-measure { position: absolute; visibility: hidden; font-size: 10cqw; top: 0; left: 0; }
+.pf-list { list-style: none; margin: 0; padding: 0; flex: 1; min-height: 0; overflow: hidden; }
+.pf-name {
+  display: block; text-align: left; background: none; border: 0; padding: 0; margin: 0 0 0.35em; cursor: pointer;
+  font: inherit; color: var(--pf-blue); font-size: var(--pf-list); font-weight: 800; line-height: 1.02;
+  text-transform: uppercase; font-variation-settings: 'wdth' 88;
+}
+.pf-head:hover, .pf-name:hover, .pf-head:focus-visible, .pf-name:focus-visible { color: var(--pf-pink); outline: none; }
+.pf .suggested-star { color: var(--pf-pink); }
+.pf-foot {
+  position: absolute; left: 6cqw; right: 6cqw; bottom: 4cqw; display: flex; justify-content: space-between; gap: 2cqw;
+  border-top: 0.25cqw dashed var(--pf-blue); padding-top: 1.4cqw;
+  font-weight: 700; font-size: 1.6cqw; letter-spacing: 0.1em; text-transform: uppercase; font-variation-settings: 'wdth' 110;
+}
+.pf-empty { position: absolute; left: 6cqw; right: 6cqw; top: 62%; font-weight: 800; font-size: 3cqw; }
