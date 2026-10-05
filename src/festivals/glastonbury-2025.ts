@@ -1,5 +1,13 @@
 import { act } from './act';
-import type { Act, DaysFestival } from './types';
+import type { Act, DaysFestival, Slot } from './types';
+
+const DAYS: Record<string, string> = { W: 'Wednesday', T: 'Thursday', F: 'Friday', S: 'Saturday', U: 'Sunday' };
+
+/** "HH:MM" → minutes; anything before 6am belongs to the previous day's night. */
+function minutes(time: string): number {
+  const [h, m] = time.split(':').map(Number);
+  return (h < 6 ? h + 24 : h) * 60 + m;
+}
 
 /**
  * Spotify artists an act might be listed under: the full name, plus the
@@ -20,14 +28,31 @@ function members(name: string): string[] {
 }
 
 // Every act on every stage, from the festival website (scripts/parse-glastonbury.mjs):
-// [name, day section, billing, stage]. Billing 0–2 = lines on the official poster,
+// { stages, acts: [name, day section, billing, set times] }. Billing 0–2 = lines on the official poster,
 // 3 = other main-stage acts, 4 = everything else. ~2,500 acts, so it's a separate
 // download, fetched only when Glastonbury is picked.
 async function loadLineup(): Promise<Act[]> {
-  const { default: data } = await import('./glastonbury-2025.lineup.json');
-  return (data as [string, string, number, string][]).map(([name, day, billing]) => ({
-    ...act(name, billing, members(name)),
+  const [{ default: data }, { default: ids }] = await Promise.all([
+    import('./glastonbury-2025.lineup.json'),
+    // Spotify artist IDs for the acts (scripts/resolve-spotify-ids.mjs), so a
+    // namesake you listen to isn't mistaken for the act playing.
+    import('./glastonbury-2025.ids.json'),
+  ]);
+  const { stages, acts } = data as { stages: string[]; acts: [string, string, number, [string, number, string, string][]][] };
+  const spotifyIds = ids as Record<string, string>;
+  return acts.map(([name, day, billing, slots]) => ({
+    ...act(
+      name,
+      billing,
+      members(name).map((m, i) => (i === 0 && spotifyIds[m] ? { name: m, spotifyId: spotifyIds[m] } : m)),
+    ),
     day,
+    slots: slots.map(([d, stage, from, to]): Slot => {
+      const start = minutes(from);
+      let end = minutes(to);
+      if (end <= start) end += 24 * 60;
+      return { day: DAYS[d], stage: stages[stage], start, end };
+    }),
   }));
 }
 

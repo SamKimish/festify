@@ -24,5 +24,6 @@ export type {
   Festival,
   ReelsFestival,
   Region,
+  Slot,
   Zone,
 } from './types';

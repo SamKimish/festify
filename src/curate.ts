@@ -14,18 +14,20 @@ import {
  * signal (people often listen to an artist in waves, so a big pile of likes
  * counts as much as current heavy rotation).
  *
- *   listening = Σ ranges 3·(1 − topArtistRank/100)
- *             + Σ top tracks (1 − trackRank/100)
- *             + 0.25 · plays in the last 50 tracks
- *   liked     = √(liked songs)          (diminishing returns)
+ *   listening = √( Σ ranges 3·(1 − topArtistRank/N)
+ *                + Σ top tracks (1 − trackRank/N)
+ *                + 0.25 · plays in the last 50 tracks )   (N = list length: 100 Spotify, 200 Last.fm)
+ *   liked     = √(liked songs)                             (diminishing returns)
  *
- * Each is divided by the user's maximum across their whole library, so both
- * run from 0 to 1, then summed. Following the artist adds a small tiebreak.
+ * Each is divided by the user's maximum across their whole library (liked by at
+ * least √30, so a handful of likes can't max it out), so both run from 0 to 1,
+ * then summed. Following the artist adds a small tiebreak.
  */
 const TOP_ARTIST_WEIGHT = 3;
 const TOP_TRACK_WEIGHT = 1;
 const RECENT_WEIGHT = 0.25;
 const FOLLOW_BONUS = 0.05;
+const LIKED_FULL_MARKS = 30;
 
 export const HEADLINER_COUNT = 4;
 
@@ -39,8 +41,12 @@ export interface ScoredArtist {
 export interface CuratedAct {
   act: Act;
   score: number;
-  /** Matched Spotify artists, best first. */
+  /** Matched artists from your listening, best first (empty for added / suggested acts). */
   artists: ScoredArtist[];
+  /** Not from your listening: you added it, or it's a "you might like" suggestion. */
+  origin?: 'added' | 'suggested';
+  /** For suggestions: the artists you listen to that it's similar to. */
+  because?: string[];
 }
 
 export function normalizeName(name: string): string {
@@ -55,13 +61,13 @@ export function normalizeName(name: string): string {
   return n || name.trim().toLowerCase();
 }
 
-function listeningRaw(a: ArtistStats): number {
+function listeningRaw(a: ArtistStats, topSize: number): number {
   let total = 0;
   for (const range of TIME_RANGES) {
     const rank = a.topRanks[range];
-    if (rank !== undefined) total += TOP_ARTIST_WEIGHT * (1 - rank / 100);
+    if (rank !== undefined) total += TOP_ARTIST_WEIGHT * (1 - rank / topSize);
   }
-  for (const t of a.topTracks) total += TOP_TRACK_WEIGHT * (1 - t.rank / 100);
+  for (const t of a.topTracks) total += TOP_TRACK_WEIGHT * (1 - t.rank / topSize);
   return total + RECENT_WEIGHT * a.recent;
 }
 
@@ -69,11 +75,16 @@ const likedRaw = (a: ArtistStats) => Math.sqrt(a.liked.length);
 
 export function scoreArtists(profile: ListeningProfile): Map<string, ScoredArtist> {
   const all = Object.values(profile.artists);
-  const maxListening = Math.max(1e-9, ...all.map(listeningRaw));
-  const maxLiked = Math.max(1e-9, ...all.map(likedRaw));
+  // Square-rooted like likes, so a solid mid-table favourite isn't dwarfed by your
+  // very top artist (whose dozens of top tracks inflate the maximum).
+  const listen = (a: ArtistStats) => Math.sqrt(listeningRaw(a, profile.topSize));
+  const maxListening = Math.max(1e-9, ...all.map(listen));
+  // At least ~30 liked songs for full marks, so one like can't outrank real listening
+  // when someone only likes a few songs per artist.
+  const maxLiked = Math.max(Math.sqrt(LIKED_FULL_MARKS), ...all.map(likedRaw));
   const scored = new Map<string, ScoredArtist>();
   for (const stats of all) {
-    const listening = listeningRaw(stats) / maxListening;
+    const listening = listen(stats) / maxListening;
     const liked = likedRaw(stats) / maxLiked;
     // Only artists you've actually played or liked; following alone isn't enough.
     if (listening === 0 && liked === 0) continue;
@@ -97,13 +108,16 @@ export function curate(lineup: Act[], profile: ListeningProfile): CuratedAct[] {
   }
 
   const order = new Map(lineup.map((act, i) => [act, i]));
+  const useIds = profile.source === 'spotify';
   const candidates: (CuratedAct & { direct: boolean })[] = [];
   lineup.forEach((act) => {
     const matched = new Map<string, ScoredArtist>();
     for (const m of act.members) {
-      const hits = m.spotifyId
-        ? [scored.get(m.spotifyId)].filter((s): s is ScoredArtist => Boolean(s))
-        : (byName.get(normalizeName(m.name)) ?? []);
+      // Spotify IDs only mean something for Spotify logins; other sources match by name.
+      const hits =
+        m.spotifyId && useIds
+          ? [scored.get(m.spotifyId)].filter((s): s is ScoredArtist => Boolean(s))
+          : (byName.get(normalizeName(m.name)) ?? []);
       for (const h of hits) matched.set(h.stats.id, h);
     }
     if (!matched.size) return;
@@ -164,17 +178,26 @@ export function songsFor(stats: ArtistStats, profile: ListeningProfile, limit = 
   return [...entries.values()].slice(0, limit);
 }
 
+/** What each time range covers, per source (Spotify's "long term" is about a year). */
+const RANGE_LABELS: Partial<Record<ListeningProfile['source'], Record<TimeRange, string>>> = {
+  lastfm: { short_term: 'last month', medium_term: 'last 6 months', long_term: 'all time' },
+  export: { short_term: 'last 4 weeks', medium_term: 'last 6 months', long_term: 'all time' },
+};
+
 /** Short human-readable reasons, e.g. "#3 in your top artists (last 6 months)". */
-export function reasonsFor(stats: ArtistStats): string[] {
+export function reasonsFor(stats: ArtistStats, source?: ListeningProfile['source']): string[] {
   const reasons: string[] = [];
+  if (stats.plays) reasons.push(`${stats.plays.toLocaleString()} play${stats.plays === 1 ? '' : 's'}`);
   const best = TIME_RANGES.filter((r) => stats.topRanks[r] !== undefined).sort(
     (a, b) => stats.topRanks[a]! - stats.topRanks[b]!,
   )[0];
-  if (best) reasons.push(`#${stats.topRanks[best]! + 1} in your top artists (${RANGE_LABEL[best]})`);
+  const label = (source && RANGE_LABELS[source]) || RANGE_LABEL;
+  if (best) reasons.push(`#${stats.topRanks[best]! + 1} in your top artists (${label[best]})`);
   const topTrackCount = new Set(stats.topTracks.map((t) => t.trackId)).size;
   if (topTrackCount) reasons.push(`${topTrackCount} of your top tracks`);
   if (stats.liked.length) {
-    reasons.push(`${stats.liked.length} liked song${stats.liked.length === 1 ? '' : 's'}`);
+    const noun = source === 'lastfm' ? 'loved track' : 'liked song';
+    reasons.push(`${stats.liked.length} ${noun}${stats.liked.length === 1 ? '' : 's'}`);
   }
   if (stats.recent) reasons.push(`${stats.recent} of your last 50 plays`);
   if (stats.followed) reasons.push('You follow them');

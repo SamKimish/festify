@@ -1,6 +1,8 @@
 import { forwardRef, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { HEADLINER_COUNT, type CuratedAct } from '../curate';
 import type { ColumnsFestival, Region, Zone } from '../festivals';
+import { posterLabel } from '../posterEdits';
+import { ActLabel } from './ActLabel';
 
 interface Props {
   festival: ColumnsFestival;
@@ -324,7 +326,7 @@ export const ColumnsPoster = forwardRef<HTMLDivElement, Props>(function ColumnsP
               className={`name name-${group}${layout[group].wrapped.has(i) ? ' wrapped' : ''}`}
               onClick={() => onSelect(rest[i])}
             >
-              {rest[i].act.display}
+              <ActLabel act={rest[i]} />
             </button>
           ) : null,
         )}
@@ -356,7 +358,7 @@ export const ColumnsPoster = forwardRef<HTMLDivElement, Props>(function ColumnsP
         <div ref={headRef} className="headliners">
           {headliners.map((a) => (
             <button key={a.act.display} type="button" className="name name-hl" onClick={() => onSelect(a)}>
-              {a.act.display}
+              <ActLabel act={a} />
             </button>
           ))}
         </div>
@@ -388,6 +390,7 @@ export const ColumnsPoster = forwardRef<HTMLDivElement, Props>(function ColumnsP
         <div className="credit-title">your*lineup</div>
         <div className="credit-sub">curated from your spotify for</div>
         <div className="credit-name">{curatedFor}</div>
+        {acts.some((x) => x.origin === 'suggested') && <div className="credit-note">* artists you might like</div>}
       </div>
 
       {/* Hidden copy of each name, split into words, for measuring line breaks. */}
@@ -395,7 +398,7 @@ export const ColumnsPoster = forwardRef<HTMLDivElement, Props>(function ColumnsP
         <span className="name">{' '}</span>
         {rest.map((a) => (
           <div key={a.act.display} className="name">
-            {a.act.display.split(' ').map((w, i) => (
+            {posterLabel(a).split(' ').map((w, i) => (
               <span key={i}>{w}</span>
             ))}
           </div>

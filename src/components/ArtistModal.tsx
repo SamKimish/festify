@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { reasonsFor, songsFor, type CuratedAct, type ScoredArtist } from '../curate';
 import type { Festival } from '../festivals';
+import { ActLabel } from './ActLabel';
+
+const listFormat = (names: string[]) => new Intl.ListFormat('en-GB', { type: 'conjunction' }).format(names);
 import { fetchArtist, pickImage, RANGE_LABEL, type ListeningProfile } from '../spotify/profile';
 
 interface Props {
   curated: CuratedAct;
   festival: Festival;
   profile: ListeningProfile;
-  demo: boolean;
+  /** False when the artists aren't Spotify artists (demo, Last.fm, data export). */
+  spotifyLookups: boolean;
   onClose: () => void;
 }
 
@@ -48,7 +52,7 @@ function ArtistImage({ artist, festival, demo }: { artist: ScoredArtist; festiva
   );
 }
 
-export function ArtistModal({ curated, festival, profile, demo, onClose }: Props) {
+export function ArtistModal({ curated, festival, profile, spotifyLookups, onClose }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -73,22 +77,53 @@ export function ArtistModal({ curated, festival, profile, demo, onClose }: Props
           ×
         </button>
         {curated.artists.length > 1 && <p className="modal-act">{curated.act.display}</p>}
+        {curated.artists.length === 0 && (
+          <section className="artist">
+            <div className="artist-head">
+              <div
+                className="artist-image artist-image-empty"
+                style={{ background: hashColor(curated.act.display, festival.theme.dotColors) }}
+                aria-hidden
+              >
+                {curated.act.display.charAt(0)}
+              </div>
+              <div>
+                <h2 className="artist-name">
+                  <ActLabel act={curated} />
+                </h2>
+                <p className="artist-reasons">
+                  {curated.origin === 'suggested'
+                    ? `You might like them: they're similar to ${listFormat(curated.because ?? [])}, who you listen to.`
+                    : 'You added this act to your poster.'}
+                </p>
+                <a
+                  className="spotify-link"
+                  href={`https://open.spotify.com/search/${encodeURIComponent(curated.act.members[0]?.name ?? curated.act.display)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Find on Spotify ↗
+                </a>
+              </div>
+            </div>
+          </section>
+        )}
         {curated.artists.map((artist) => {
           const songs = songsFor(artist.stats, profile);
           return (
             <section key={artist.stats.id} className="artist">
               <div className="artist-head">
-                <ArtistImage artist={artist} festival={festival} demo={demo} />
+                <ArtistImage artist={artist} festival={festival} demo={!spotifyLookups} />
                 <div>
                   <h2 className="artist-name">{artist.stats.name}</h2>
                   <ul className="artist-reasons">
-                    {reasonsFor(artist.stats).map((r) => (
+                    {reasonsFor(artist.stats, profile.source).map((r) => (
                       <li key={r}>{r}</li>
                     ))}
                   </ul>
                   {artist.stats.url && (
                     <a className="spotify-link" href={artist.stats.url} target="_blank" rel="noreferrer">
-                      Open in Spotify ↗
+                      {artist.stats.url.includes('/search/') ? 'Find on Spotify ↗' : 'Open in Spotify ↗'}
                     </a>
                   )}
                 </div>
@@ -96,7 +131,9 @@ export function ArtistModal({ curated, festival, profile, demo, onClose }: Props
 
               <h3 className="songs-title">Your most-played</h3>
               {songs.length === 0 ? (
-                <p className="songs-empty">No individual songs to show. Spotify only shares your top 100 tracks.</p>
+                <p className="songs-empty">
+                  No individual songs to show: only your top {profile.topSize} tracks are counted.
+                </p>
               ) : (
                 <ol className="songs">
                   {songs.map(({ track, top, liked }) => (
@@ -113,7 +150,11 @@ export function ArtistModal({ curated, festival, profile, demo, onClose }: Props
                         <small>{track.album}</small>
                       </div>
                       <div className="song-tags">
-                        {top && (
+                        {track.plays ? (
+                          <span className="tag">
+                            {track.plays.toLocaleString()} play{track.plays === 1 ? '' : 's'}
+                          </span>
+                        ) : top && (
                           <span className="tag" title={`#${top.rank + 1} in your top tracks, ${RANGE_LABEL[top.range]}`}>
                             #{top.rank + 1} · {RANGE_LABEL[top.range]}
                           </span>

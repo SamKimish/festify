@@ -22,6 +22,8 @@ export interface TrackLite {
   album: string;
   image?: string;
   url?: string;
+  /** Real play count, when the source has one (Last.fm, Spotify data export). */
+  plays?: number;
 }
 
 export interface ArtistStats {
@@ -38,10 +40,18 @@ export interface ArtistStats {
   /** Plays among the last 50 played tracks. */
   recent: number;
   followed: boolean;
+  /** Real play count, when the source has one (Last.fm, Spotify data export). */
+  plays?: number;
 }
+
+/** Where the listening data came from. */
+export type ProfileSource = 'spotify' | 'lastfm' | 'export' | 'demo';
 
 export interface ListeningProfile {
   version: number;
+  source: ProfileSource;
+  /** Length of the top-artist/track lists the ranks come from. */
+  topSize: number;
   userId: string;
   displayName: string;
   fetchedAt: number;
@@ -52,7 +62,7 @@ export interface ListeningProfile {
   warnings: string[];
 }
 
-const PROFILE_VERSION = 1;
+export const PROFILE_VERSION = 2;
 const CACHE_KEY = 'festify.profile';
 const CACHE_MAX_AGE = 12 * 60 * 60 * 1000;
 
@@ -71,7 +81,8 @@ export function loadCachedProfile(): ListeningProfile | null {
     if (!raw) return null;
     const profile = JSON.parse(raw) as ListeningProfile;
     if (profile.version !== PROFILE_VERSION) return null;
-    if (Date.now() - profile.fetchedAt > CACHE_MAX_AGE) return null;
+    // An uploaded data export can't be re-fetched, so it never expires.
+    if (profile.source !== 'export' && Date.now() - profile.fetchedAt > CACHE_MAX_AGE) return null;
     return profile;
   } catch {
     return null;
@@ -86,7 +97,7 @@ export function clearCachedProfile(): void {
   }
 }
 
-function saveProfile(profile: ListeningProfile) {
+export function saveProfile(profile: ListeningProfile) {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(profile));
   } catch {
@@ -101,6 +112,8 @@ export async function fetchProfile(onProgress: Progress): Promise<ListeningProfi
 
   const profile: ListeningProfile = {
     version: PROFILE_VERSION,
+    source: 'spotify',
+    topSize: 100,
     userId: me.id,
     displayName: me.display_name || me.id,
     fetchedAt: Date.now(),

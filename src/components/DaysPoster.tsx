@@ -2,6 +2,8 @@ import { Fragment, forwardRef, useCallback, useEffect, useLayoutEffect, useRef, 
 import type { CuratedAct } from '../curate';
 import type { DaysFestival } from '../festivals';
 import { layoutDays, type DayLine } from '../daysLayout';
+import { posterLabel } from '../posterEdits';
+import { ActLabel } from './ActLabel';
 
 interface Props {
   festival: DaysFestival;
@@ -15,7 +17,9 @@ const SEPARATOR = ' • ';
 export const DaysPoster = forwardRef<HTMLDivElement, Props>(function DaysPoster({ festival, acts, onSelect }, ref) {
   const measureRef = useRef<HTMLDivElement>(null);
   const [fontsReady, setFontsReady] = useState(() => document.fonts.status === 'loaded');
-  const [layout, setLayout] = useState<DayLine[][] | null>(null);
+  // Remember which acts a layout was computed for, so a stale one is never drawn.
+  const [computed, setComputed] = useState<{ acts: CuratedAct[]; lines: DayLine[][] } | null>(null);
+  const layout = computed?.acts === acts ? computed.lines : null;
   const { theme } = festival;
 
   useEffect(() => {
@@ -33,7 +37,7 @@ export const DaysPoster = forwardRef<HTMLDivElement, Props>(function DaysPoster(
       width: d.zone.w,
       height: d.zone.h * aspect,
     }));
-    setLayout(layoutDays(days, measure));
+    setComputed({ acts, lines: layoutDays(days, measure) });
   }, [acts, festival]);
 
   useLayoutEffect(runLayout, [runLayout, fontsReady]);
@@ -69,7 +73,7 @@ export const DaysPoster = forwardRef<HTMLDivElement, Props>(function DaysPoster(
                   <Fragment key={acts[i].act.display}>
                     {j > 0 && <span className="day-sep">{SEPARATOR}</span>}
                     <button type="button" className="day-name" onClick={() => onSelect(acts[i])}>
-                      {acts[i].act.display}
+                      <ActLabel act={acts[i]} />
                     </button>
                   </Fragment>
                 ))}
@@ -90,7 +94,7 @@ export const DaysPoster = forwardRef<HTMLDivElement, Props>(function DaysPoster(
         <span className="day-name">{SEPARATOR}</span>
         {acts.map((a) => (
           <span key={a.act.display} className="day-name">
-            {a.act.display}
+            {posterLabel(a)}
           </span>
         ))}
       </div>

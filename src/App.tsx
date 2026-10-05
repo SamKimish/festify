@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArtistModal } from './components/ArtistModal';
 import { Poster } from './components/Poster';
-import { PosterActions } from './components/PosterActions';
-import { curate, reasonsFor, type CuratedAct } from './curate';
+import { Sidebar } from './components/Sidebar';
+import { Welcome } from './components/Welcome';
+import { curate, type CuratedAct } from './curate';
 import { demoProfile } from './demo';
 import { comingSoon, festivals, festivalsByEdition, lineupOf, loadLineup, type Act } from './festivals';
+import { buildPoster, loadEdits, saveEdits, type PosterEdits } from './posterEdits';
+import { fetchLastfmProfile, forgetLastfmUser, LastfmError, lastfmConfigured, savedLastfmUser } from './sources/lastfm';
 import { SpotifyError } from './spotify/api';
 import { handleRedirect, isConfigured, isLoggedIn, login, logout, redirectUri } from './spotify/auth';
 import {
@@ -12,40 +15,67 @@ import {
   fetchProfile,
   loadCachedProfile,
   type ListeningProfile,
+  type Progress,
 } from './spotify/profile';
+import { suggestActs } from './suggest';
 
 type State =
   | { kind: 'starting' }
   | { kind: 'signedOut'; error?: string }
   | { kind: 'loading'; message: string; fraction?: number }
-  | { kind: 'ready'; profile: ListeningProfile; demo: boolean }
+  | { kind: 'ready'; profile: ListeningProfile }
   | { kind: 'error'; error: string };
 
 const FESTIVAL_KEY = 'festify.festival';
+const SUGGEST_KEY = 'festify.suggest';
+const DEFAULT_TITLE = 'Festify · Your festival lineup, built from your Spotify';
+const SOURCE_LABEL: Record<ListeningProfile['source'], string> = {
+  spotify: 'Spotify',
+  lastfm: 'Last.fm',
+  export: 'Spotify data',
+  demo: 'Demo',
+};
 
-function storedFestival(): string {
+const read = (key: string) => {
   try {
-    const id = localStorage.getItem(FESTIVAL_KEY);
-    if (id && festivals.some((f) => f.id === id)) return id;
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+const write = (key: string, value: string) => {
+  try {
+    localStorage.setItem(key, value);
   } catch {
     /* storage unavailable */
   }
-  return festivals[0].id;
-}
+};
 
-const DEFAULT_TITLE = 'Festify · Your festival lineup, built from your Spotify';
+function storedFestival(): string {
+  const id = read(FESTIVAL_KEY);
+  return id && festivals.some((f) => f.id === id) ? id : festivals[0].id;
+}
 
 /** Turns errors into something a person can act on. */
 function friendlyError(e: unknown): string {
   if (e instanceof SpotifyError) {
     if (e.status === 403) {
-      return "Spotify won't share this account's listening with Festify yet. While Festify is in Spotify's testing mode, only invited accounts can log in, so ask whoever sent you the link to add your Spotify email.";
+      return "Spotify won't share this account's listening with Festify yet. While Festify is in Spotify's testing mode, only invited accounts can log in, so ask whoever sent you the link to add your Spotify email, or use Last.fm or your Spotify data below.";
     }
     if (e.status === 401) return 'Your Spotify session expired. Please log in again.';
     if (e.status === 429) return 'Spotify is getting a lot of requests right now. Wait a minute, then try again.';
     if (e.status >= 500) return 'Spotify is having trouble right now. Try again in a minute.';
   }
-  if (e instanceof TypeError) return "Couldn't reach Spotify. Check your internet connection and try again.";
+  if (e instanceof LastfmError) {
+    if (e.code === 6) return "We couldn't find that Last.fm username. Check the spelling and try again.";
+    if (e.code === 17) return 'That Last.fm profile is private. Make your listening public in Last.fm settings, then try again.';
+    if (e.code === -1) return e.message;
+    return 'Last.fm is having trouble right now. Try again in a minute.';
+  }
+  // (Checked by name: the export reader is loaded on demand.)
+  if (e instanceof Error && e.name === 'ExportError') return e.message;
+  if (e instanceof SyntaxError) return "That file doesn't look like a Spotify data export. Choose the .zip Spotify emailed you.";
+  if (e instanceof TypeError) return "Couldn't connect. Check your internet connection and try again.";
   const message = e instanceof Error ? e.message : String(e);
   if (/token request failed/i.test(message)) return "Spotify sign-in didn't finish. Please try logging in again.";
   return message;
@@ -61,26 +91,44 @@ export default function App() {
   const posterRef = useRef<HTMLDivElement>(null);
   const festival = festivals.find((f) => f.id === festivalId) ?? festivals[0];
 
-  const load = useCallback(async (force = false) => {
-    const cached = force ? null : loadCachedProfile();
-    if (cached) {
-      setState({ kind: 'ready', profile: cached, demo: false });
-      return;
-    }
-    setState({ kind: 'loading', message: 'Connecting to Spotify…', fraction: 0 });
+  /** Runs a profile loader with progress, landing in 'ready' or a friendly error. */
+  const run = useCallback(async (loader: (progress: Progress) => Promise<ListeningProfile>, onFailSignOut = false) => {
+    setState({ kind: 'loading', message: 'Getting started…', fraction: 0 });
     try {
-      const profile = await fetchProfile((message, fraction) =>
-        setState({ kind: 'loading', message, fraction }),
-      );
-      setState({ kind: 'ready', profile, demo: false });
+      const profile = await loader((message, fraction) => setState({ kind: 'loading', message, fraction }));
+      setState({ kind: 'ready', profile });
     } catch (e) {
       console.error(e);
       if (e instanceof SpotifyError && e.status === 401) logout();
-      if (!isLoggedIn()) setState({ kind: 'signedOut', error: 'Your Spotify session expired. Please log in again.' });
-      else setState({ kind: 'error', error: friendlyError(e) });
+      if (onFailSignOut || (e instanceof SpotifyError && !isLoggedIn())) {
+        setState({ kind: 'signedOut', error: friendlyError(e) });
+      } else {
+        setState({ kind: 'error', error: friendlyError(e) });
+      }
     }
   }, []);
 
+  const loadSpotify = useCallback(
+    (force = false) => {
+      const cached = force ? null : loadCachedProfile();
+      if (cached?.source === 'spotify') return setState({ kind: 'ready', profile: cached });
+      return run(fetchProfile);
+    },
+    [run],
+  );
+
+  const loadLastfm = useCallback(
+    (username: string, force = false) => {
+      const cached = force ? null : loadCachedProfile();
+      if (cached?.source === 'lastfm' && cached.userId.toLowerCase() === username.toLowerCase()) {
+        return setState({ kind: 'ready', profile: cached });
+      }
+      return run((p) => fetchLastfmProfile(username, p), !savedLastfmUser());
+    },
+    [run],
+  );
+
+  // Pick up where the visitor left off: Spotify login, Last.fm user or uploaded data.
   useEffect(() => {
     (async () => {
       let error: string | null = null;
@@ -90,18 +138,16 @@ export default function App() {
         console.error(e);
         error = friendlyError(e);
       }
-      if (isLoggedIn()) await load();
+      const cached = loadCachedProfile();
+      const lastfmUser = savedLastfmUser();
+      if (isLoggedIn()) await loadSpotify();
+      else if (cached?.source === 'export') setState({ kind: 'ready', profile: cached });
+      else if (lastfmUser && lastfmConfigured) await loadLastfm(lastfmUser);
       else setState({ kind: 'signedOut', error: error ?? undefined });
     })();
-  }, [load]);
+  }, [loadSpotify, loadLastfm]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(FESTIVAL_KEY, festivalId);
-    } catch {
-      /* storage unavailable */
-    }
-  }, [festivalId]);
+  useEffect(() => write(FESTIVAL_KEY, festivalId), [festivalId]);
 
   // Big lineups (Glastonbury) download separately when picked.
   const [loaded, setLoaded] = useState<{ id: string; acts: Act[] | null; failed?: boolean }>(() => ({
@@ -126,25 +172,74 @@ export default function App() {
   }, [festival]);
   useEffect(fetchLineup, [fetchLineup]);
 
+  const profile = state.kind === 'ready' ? state.profile : null;
+  const isDemo = profile?.source === 'demo';
+
   // The demo listener is invented per festival, so make a new one on switching.
-  const isDemo = state.kind === 'ready' && state.demo;
   useEffect(() => {
-    if (isDemo && lineup) setState({ kind: 'ready', profile: demoProfile(lineup), demo: true });
+    if (isDemo && lineup) setState({ kind: 'ready', profile: demoProfile(lineup) });
   }, [lineup, isDemo]);
 
-  const profile = state.kind === 'ready' ? state.profile : null;
-  const acts = useMemo(() => (profile && lineup ? curate(lineup, profile) : []), [lineup, profile]);
+  // Your edits (hide / headline / add), per festival.
+  const [editState, setEditState] = useState(() => ({ id: festival.id, edits: loadEdits(festival.id) }));
+  const edits = editState.id === festival.id ? editState.edits : loadEdits(festival.id);
+  const setEdits = (next: PosterEdits) => {
+    saveEdits(festival.id, next);
+    setEditState({ id: festival.id, edits: next });
+  };
+
+  // "You might like" suggestions (needs Last.fm).
+  const [suggestOn, setSuggestOn] = useState(() => read(SUGGEST_KEY) === '1');
+  const [suggested, setSuggested] = useState<{ key: string; acts: CuratedAct[]; loading: boolean; failed: boolean }>({
+    key: '',
+    acts: [],
+    loading: false,
+    failed: false,
+  });
+  const listened = useMemo(() => (profile && lineup ? curate(lineup, profile) : []), [lineup, profile]);
+  const suggestKey = profile && lineup ? `${festival.id}|${profile.source}|${profile.userId}|${profile.fetchedAt}` : '';
+  useEffect(() => {
+    if (!suggestOn || !profile || !lineup || !lastfmConfigured || isDemo) return;
+    let live = true;
+    setSuggested({ key: suggestKey, acts: [], loading: true, failed: false });
+    suggestActs(lineup, profile, listened)
+      .then((acts) => live && setSuggested({ key: suggestKey, acts, loading: false, failed: false }))
+      .catch((e) => {
+        console.error(e);
+        if (live) setSuggested({ key: suggestKey, acts: [], loading: false, failed: true });
+      });
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suggestOn, suggestKey]);
+  const activeSuggestions = useMemo(
+    () => (suggestOn && suggested.key === suggestKey ? suggested.acts : []),
+    [suggestOn, suggested, suggestKey],
+  );
+
+  const poster = useMemo(
+    () => (lineup ? buildPoster(listened, activeSuggestions, lineup, edits) : { acts: [], hidden: [] }),
+    [listened, activeSuggestions, lineup, edits],
+  );
   const editionName = `${festival.name} ${festival.edition}`;
 
   useEffect(() => {
-    document.title =
-      state.kind === 'ready' ? `${state.demo ? 'Demo' : 'Your'} ${editionName} lineup · Festify` : DEFAULT_TITLE;
-  }, [state, editionName]);
+    document.title = profile
+      ? `${isDemo ? 'Demo' : 'Your'} ${editionName} lineup · Festify`
+      : DEFAULT_TITLE;
+  }, [profile, isDemo, editionName]);
 
   const signOut = () => {
     logout();
+    forgetLastfmUser();
     clearCachedProfile();
     setState({ kind: 'signedOut' });
+  };
+
+  const refresh = () => {
+    if (profile?.source === 'spotify') loadSpotify(true);
+    else if (profile?.source === 'lastfm') loadLastfm(profile.userId, true);
   };
 
   return (
@@ -176,18 +271,18 @@ export default function App() {
             )}
           </select>
         </label>
-        {state.kind === 'ready' && (
+        {profile && (
           <div className="user">
-            <span className="user-name" title={state.profile.displayName}>
-              {state.profile.displayName}
+            <span className="user-name" title={`${profile.displayName} (${SOURCE_LABEL[profile.source]})`}>
+              {profile.displayName}
             </span>
-            {!state.demo && (
-              <button type="button" className="link-button" onClick={() => load(true)}>
+            {(profile.source === 'spotify' || profile.source === 'lastfm') && (
+              <button type="button" className="link-button" onClick={refresh}>
                 Refresh
               </button>
             )}
             <button type="button" className="link-button" onClick={signOut}>
-              {state.demo ? 'Exit demo' : 'Log out'}
+              {isDemo ? 'Exit demo' : profile.source === 'spotify' ? 'Log out' : 'Start over'}
             </button>
           </div>
         )}
@@ -204,46 +299,27 @@ export default function App() {
         )}
 
         {state.kind === 'signedOut' && (
-          <section className="welcome">
-            <h1>
-              Your lineup<span className="brand-star">*</span>
-              <br />
-              your headliners
-            </h1>
-            <p>
-              Log in with Spotify, pick a festival and we'll rebuild its official lineup poster around the
-              artists you actually listen to. Your favourite act on the small print? They're headlining now.
-            </p>
-            <p className="welcome-festivals">Now playing: {festivalList}.</p>
-            {state.error && <p className="error">{state.error}</p>}
-            <div className="welcome-actions">
-              {isConfigured ? (
-                <button type="button" className="primary" onClick={() => login()}>
-                  Log in with Spotify
-                </button>
-              ) : (
-                <p className="error">
-                  Spotify isn't configured yet: set <code>VITE_SPOTIFY_CLIENT_ID</code> in{' '}
-                  <code>.env.local</code> and register <code>{redirectUri()}</code> as a redirect URI.
-                </p>
-              )}
-              <button
-                type="button"
-                className="secondary"
-                onClick={() => setState({ kind: 'ready', profile: demoProfile(lineup ?? []), demo: true })}
-              >
-                Try it with demo data
-              </button>
-            </div>
-            <p className="fine-print">
-              Festify reads your top artists, top tracks, liked songs, followed artists and recently played
-              tracks. Everything stays in your browser.
-            </p>
-          </section>
+          <Welcome
+            festivalList={festivalList}
+            error={state.error}
+            spotifyConfigured={isConfigured}
+            lastfmConfigured={lastfmConfigured}
+            configHint={`Spotify isn't configured yet: set VITE_SPOTIFY_CLIENT_ID in .env.local and register ${redirectUri()} as a redirect URI.`}
+            onSpotify={() => login()}
+            onLastfm={(username) => loadLastfm(username)}
+            onUpload={(files) =>
+              run(async (p) => {
+                p('Opening your file…', 0.05);
+                const { importSpotifyExport } = await import('./sources/spotifyExport');
+                return importSpotifyExport(files, p);
+              }, true)
+            }
+            onDemo={() => setState({ kind: 'ready', profile: demoProfile(lineup ?? []) })}
+          />
         )}
 
         {state.kind === 'loading' && (
-          <section className="status">
+          <section className="status" aria-busy="true">
             <p>{state.message}</p>
             <div className="progress">
               <div style={{ width: `${Math.round((state.fraction ?? 0) * 100)}%` }} />
@@ -256,11 +332,11 @@ export default function App() {
             <h1 className="status-title">Couldn't build your poster</h1>
             <p className="error">{state.error}</p>
             <div className="status-actions">
-              <button type="button" className="primary" onClick={() => load(true)}>
+              <button type="button" className="primary" onClick={() => (savedLastfmUser() ? loadLastfm(savedLastfmUser()!, true) : loadSpotify(true))}>
                 Try again
               </button>
               <button type="button" className="secondary" onClick={signOut}>
-                Log out
+                Start over
               </button>
             </div>
           </section>
@@ -269,17 +345,15 @@ export default function App() {
         {state.kind === 'ready' && (
           <div className="result">
             <h1 className="visually-hidden">
-              {state.demo ? 'Demo' : 'Your'} {editionName} lineup
+              {isDemo ? 'Demo' : 'Your'} {editionName} lineup
             </h1>
-            {state.demo && (
-              <p className="demo-banner">Demo data: these are made-up listening stats.</p>
-            )}
+            {isDemo && <p className="demo-banner">Demo data: these are made-up listening stats.</p>}
             <div className="poster-wrap">
               {lineup ? (
                 <Poster
                   ref={posterRef}
                   festival={festival}
-                  acts={acts}
+                  acts={poster.acts}
                   curatedFor={state.profile.displayName}
                   onSelect={setSelected}
                 />
@@ -303,51 +377,28 @@ export default function App() {
               )}
             </div>
 
-            <aside className="sidebar">
-              <div className="summary">
-                <p className="summary-count">
-                  {lineup ? (
-                    <>
-                      <strong>{acts.length}</strong> of {lineup.length.toLocaleString()} acts on your poster
-                    </>
-                  ) : (
-                    'Loading lineup…'
-                  )}
-                </p>
-                {lineup && acts.length > 0 && (
-                  <PosterActions
-                    posterRef={posterRef}
-                    version={`${festival.id}|${state.profile.userId}|${state.profile.fetchedAt}`}
-                    filename={`my-${festival.id}-lineup.png`}
-                    width={festival.width}
-                    shareText={`My personal ${editionName} lineup, made with Festify:`}
-                  />
-                )}
-              </div>
-              {lineup && acts.length === 0 && (
-                <p className="empty-note">
-                  None of your artists are on this lineup. Try another festival from the menu
-                  {state.demo ? '' : ', or press Refresh if you’ve been listening to new music lately'}.
-                </p>
-              )}
-              {state.profile.warnings.length > 0 && (
-                <p className="warning">
-                  Spotify didn't share your {state.profile.warnings.join(', ')}, so the lineup may be
-                  incomplete.
-                </p>
-              )}
-              <ol className="ranking">
-                {acts.map((a, i) => (
-                  <li key={a.act.display}>
-                    <button type="button" onClick={() => setSelected(a)}>
-                      <span className="ranking-pos">{i + 1}</span>
-                      <span className="ranking-name">{a.act.display}</span>
-                      <span className="ranking-why">{reasonsFor(a.artists[0].stats).slice(0, 2).join(' · ')}</span>
-                    </button>
-                  </li>
-                ))}
-              </ol>
-            </aside>
+            <Sidebar
+              festival={festival}
+              lineup={lineup}
+              acts={poster.acts}
+              hidden={poster.hidden}
+              profile={state.profile}
+              edits={edits}
+              onEdits={setEdits}
+              suggestions={{
+                available: lastfmConfigured && !isDemo,
+                enabled: suggestOn,
+                loading: suggested.loading && suggested.key === suggestKey,
+                failed: suggested.failed && suggested.key === suggestKey,
+                count: activeSuggestions.filter((s) => poster.acts.includes(s)).length,
+              }}
+              onToggleSuggestions={(on) => {
+                setSuggestOn(on);
+                write(SUGGEST_KEY, on ? '1' : '0');
+              }}
+              posterRef={posterRef}
+              onSelect={setSelected}
+            />
           </div>
         )}
       </main>
@@ -357,13 +408,13 @@ export default function App() {
           curated={selected}
           festival={festival}
           profile={profile}
-          demo={state.kind === 'ready' && state.demo}
+          spotifyLookups={profile.source === 'spotify'}
           onClose={() => setSelected(null)}
         />
       )}
 
       <footer className="footer" inert={selected ? true : undefined}>
-        Unofficial fan project. Not affiliated with any festival or with Spotify. Data from Spotify.
+        Unofficial fan project. Not affiliated with any festival, Spotify or Last.fm.
       </footer>
     </div>
   );

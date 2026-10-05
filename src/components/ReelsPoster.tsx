@@ -1,7 +1,9 @@
 import { forwardRef, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import type { CuratedAct } from '../curate';
 import type { ReelsFestival } from '../festivals';
+import { posterLabel } from '../posterEdits';
 import { layoutReels, type ReelLayout } from '../reelsLayout';
+import { ActLabel } from './ActLabel';
 
 interface Props {
   festival: ReelsFestival;
@@ -20,7 +22,8 @@ export const ReelsPoster = forwardRef<HTMLDivElement, Props>(function ReelsPoste
 ) {
   const measureRef = useRef<HTMLDivElement>(null);
   const [fontsReady, setFontsReady] = useState(() => document.fonts.status === 'loaded');
-  const [layout, setLayout] = useState<ReelLayout[] | null>(null);
+  const [computed, setComputed] = useState<{ acts: CuratedAct[]; reels: ReelLayout[] } | null>(null);
+  const layout = computed?.acts === acts ? computed.reels : null;
   const placed = acts.filter((a) => !a.act.fixed);
   const { theme } = festival;
 
@@ -39,7 +42,7 @@ export const ReelsPoster = forwardRef<HTMLDivElement, Props>(function ReelsPoste
           }
         : { aspect: measured[i].getBoundingClientRect().width / MEASURE_PX, maxHeight: Infinity },
     );
-    setLayout(layoutReels(shapes, festival.reels, festival.height / festival.width));
+    setComputed({ acts, reels: layoutReels(shapes, festival.reels, festival.height / festival.width) });
     // `placed` is derived from `acts`.
   }, [acts, festival]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -81,7 +84,7 @@ export const ReelsPoster = forwardRef<HTMLDivElement, Props>(function ReelsPoste
                   <button
                     key={a.act.display}
                     type="button"
-                    className="logo-button"
+                    className={`logo-button${a.origin === 'suggested' ? ' suggested' : ''}`}
                     onClick={() => onSelect(a)}
                     title={a.act.display}
                   >
@@ -89,7 +92,7 @@ export const ReelsPoster = forwardRef<HTMLDivElement, Props>(function ReelsPoste
                       <img src={`${base}${a.act.logo.src}`} alt={a.act.display} style={{ height: `${height}cqw` }} />
                     ) : (
                       <span className="logo-text" style={{ fontSize: `${height}cqw` }}>
-                        {a.act.display}
+                        <ActLabel act={a} />
                       </span>
                     )}
                   </button>
@@ -110,7 +113,7 @@ export const ReelsPoster = forwardRef<HTMLDivElement, Props>(function ReelsPoste
       <div ref={measureRef} className="measure" aria-hidden style={{ fontSize: MEASURE_PX }}>
         {placed.map((a) => (
           <span key={a.act.display} className="logo-text">
-            {a.act.logo ? '' : a.act.display}
+            {a.act.logo ? '' : posterLabel(a)}
           </span>
         ))}
       </div>

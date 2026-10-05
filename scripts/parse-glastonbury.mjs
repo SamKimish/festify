@@ -72,7 +72,14 @@ for (const m of html.matchAll(/id="stage-header-(\d+)"[^>]*>([^<]*)</g)) stageNa
 
 // Walk the stage containers in page order.
 const acts = new Map();
-const tokens = /<div id="[^"]*" aria-labelledby="stage-header-(\d+)"|class="stage-day">([^<]*)<|<tr>\s*<td>([\s\S]*?)<\/td>/g;
+const tokens =
+  /<div id="[^"]*" aria-labelledby="stage-header-(\d+)"|class="stage-day">([^<]*)<|<tr>\s*<td>([\s\S]*?)<\/td>\s*<td class="timings">([^<]*)<\/td>/g;
+const DAY_CODES = { WEDNESDAY: 'W', THURSDAY: 'T', FRIDAY: 'F', SATURDAY: 'S', SUNDAY: 'U' };
+const stageIndex = new Map();
+const stageId = (name) => {
+  if (!stageIndex.has(name)) stageIndex.set(name, stageIndex.size);
+  return stageIndex.get(name);
+};
 let stage = '';
 let day = '';
 for (const m of html.matchAll(tokens)) {
@@ -82,21 +89,36 @@ for (const m of html.matchAll(tokens)) {
     const name = decode(m[3]);
     if (!name || SKIP.test(name)) continue;
     const k = key(name);
-    if (!k || acts.has(k)) continue;
+    if (!k) continue;
+    // Every set, for the clash finder: [day code, stage index, "HH:MM", "HH:MM"].
+    const times = decode(m[4]).match(/(\d\d:\d\d)\s*-\s*(\d\d:\d\d)/);
+    const slot = times && DAY_CODES[day] ? [DAY_CODES[day], stageId(stage), times[1], times[2]] : null;
+    if (acts.has(k)) {
+      if (slot) acts.get(k).slots.push(slot);
+      continue;
+    }
     const onPoster = poster.get(k);
     const sectionDay = onPoster?.day ?? (['WEDNESDAY', 'THURSDAY'].includes(day) ? 'FRIDAY' : day);
     acts.set(k, {
       name: onPoster?.name ?? name,
       day: sectionDay,
       billing: onPoster ? onPoster.billing : MAIN_STAGES.has(stage) ? 3 : 4,
-      stage,
+      slots: slot ? [slot] : [],
     });
   }
 }
 // Poster acts missing from the stage listings (shouldn't happen, but keep the poster complete).
-for (const [k, p] of poster) if (!acts.has(k)) acts.set(k, { name: p.name, day: p.day, billing: p.billing, stage: '' });
+for (const [k, p] of poster) {
+  if (!acts.has(k)) acts.set(k, { name: p.name, day: p.day, billing: p.billing, slots: [] });
+}
 
 const list = [...acts.values()].sort((a, b) => a.billing - b.billing);
-writeFileSync(output, JSON.stringify(list.map(({ name, day, billing, stage }) => [name, day, billing, stage])) + '\n');
+writeFileSync(
+  output,
+  JSON.stringify({
+    stages: [...stageIndex.keys()],
+    acts: list.map(({ name, day, billing, slots }) => [name, day, billing, slots]),
+  }) + '\n',
+);
 const byDay = list.reduce((t, a) => ({ ...t, [a.day]: (t[a.day] ?? 0) + 1 }), {});
 console.log(`Wrote ${list.length} acts to ${output}`, byDay);

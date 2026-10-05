@@ -14,19 +14,33 @@ export class SpotifyError extends Error {
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** GET a Spotify Web API path, retrying when rate-limited (429). */
-export async function spotifyGet<T>(path: string, attempt = 0): Promise<T> {
+export function spotifyGet<T>(path: string): Promise<T> {
+  return spotifyRequest<T>('GET', path);
+}
+
+/** POST JSON to a Spotify Web API path. */
+export function spotifyPost<T>(path: string, body: unknown): Promise<T> {
+  return spotifyRequest<T>('POST', path, body);
+}
+
+async function spotifyRequest<T>(method: string, path: string, body?: unknown, attempt = 0): Promise<T> {
   const token = await getAccessToken();
   const res = await fetch(path.startsWith('http') ? path : `${API}${path}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+    },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   if (res.status === 429 && attempt < 5) {
     const retryAfter = Number(res.headers.get('Retry-After') ?? '1');
     await wait((retryAfter + 0.5) * 1000);
-    return spotifyGet<T>(path, attempt + 1);
+    return spotifyRequest<T>(method, path, body, attempt + 1);
   }
   if (res.status >= 500 && attempt < 2) {
     await wait(1000);
-    return spotifyGet<T>(path, attempt + 1);
+    return spotifyRequest<T>(method, path, body, attempt + 1);
   }
   if (!res.ok) {
     let message = `Spotify request failed (${res.status})`;

@@ -36,6 +36,17 @@ export interface Act {
   logo?: { src: string; width: number; height: number };
   /** Day section the act appears in, for day-based posters (matches DaySection.label). */
   day?: string;
+  /** Set times, where the festival publishes them (used to find clashes). */
+  slots?: Slot[];
+}
+
+export interface Slot {
+  /** Day the set is listed under, e.g. "Saturday". */
+  day: string;
+  stage: string;
+  /** Minutes after midnight at the start of `day`; after-midnight sets run past 1440. */
+  start: number;
+  end: number;
 }
 
 export interface FestivalTheme {

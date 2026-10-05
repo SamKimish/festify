@@ -31,7 +31,9 @@ export function demoProfile(lineup: Act[]): ListeningProfile {
   const chosen = members.filter(({ billing }) => rand() < ([0.45, 0.35, 0.3, 0.12][billing] ?? deepCut));
 
   const profile: ListeningProfile = {
-    version: 1,
+    version: 2,
+    source: 'demo',
+    topSize: 100,
     userId: 'demo',
     displayName: 'Demo listener',
     fetchedAt: Date.now(),

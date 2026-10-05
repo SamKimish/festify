@@ -7,6 +7,8 @@ const SCOPES = [
   'user-library-read',
   'user-follow-read',
   'user-read-recently-played',
+  // "Make a playlist" (private, in the user's own library).
+  'playlist-modify-private',
 ];
 const TOKEN_KEY = 'festify.token';
 const VERIFIER_KEY = 'festify.pkce';
@@ -15,6 +17,8 @@ interface StoredToken {
   access_token: string;
   refresh_token?: string;
   expires_at: number;
+  /** Space-separated scopes Spotify granted. */
+  scope?: string;
 }
 
 export const isConfigured = Boolean(CLIENT_ID);
@@ -47,13 +51,14 @@ function readToken(): StoredToken | null {
   }
 }
 
-function saveToken(data: { access_token: string; refresh_token?: string; expires_in: number }) {
+function saveToken(data: { access_token: string; refresh_token?: string; expires_in: number; scope?: string }) {
   const previous = readToken();
   const token: StoredToken = {
     access_token: data.access_token,
     // Spotify doesn't always rotate the refresh token, so keep the old one.
     refresh_token: data.refresh_token ?? previous?.refresh_token,
     expires_at: Date.now() + (data.expires_in - 60) * 1000,
+    scope: data.scope ?? previous?.scope,
   };
   localStorage.setItem(TOKEN_KEY, JSON.stringify(token));
 }
@@ -118,6 +123,11 @@ export async function handleRedirect(): Promise<string | null> {
     code_verifier: pending.verifier,
   });
   return null;
+}
+
+/** Whether the current login granted a scope (older logins predate the playlist one). */
+export function hasScope(scope: string): boolean {
+  return (readToken()?.scope ?? '').split(' ').includes(scope);
 }
 
 export function isLoggedIn(): boolean {

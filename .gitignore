@@ -4,3 +4,4 @@ dist
 .env.*.local
 festival-sources/*/hd-raw/
 festival-sources/*/line-up.html
+festival-sources/*/ids-cache.json
