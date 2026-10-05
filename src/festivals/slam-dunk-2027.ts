@@ -2,11 +2,11 @@ import { act } from './act';
 import logoSizes from './slam-dunk-2027.logos.json';
 import type { Act, ReelsFestival } from './types';
 
-/** An act with its logo cut from the official poster (see festival-sources/slam-dunk-2027). */
+/** An act with its logo cut from the official poster (traced to SVG; see festival-sources/slam-dunk-2027). */
 function band(display: string, billing: number, slug: keyof typeof logoSizes, members?: string[]): Act {
   return {
     ...act(display, billing, members ?? [display]),
-    logo: { src: `festivals/slam-dunk-2027/logos/${slug}.png`, ...logoSizes[slug] },
+    logo: { src: `festivals/slam-dunk-2027/logos/${slug}.svg`, ...logoSizes[slug] },
   };
 }
 

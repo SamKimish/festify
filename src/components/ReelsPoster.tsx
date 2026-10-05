@@ -10,8 +10,9 @@ interface Props {
 }
 
 const MEASURE_PX = 100;
-/** Logos may be shown at most this many times their size on the original poster. */
-const MAX_LOGO_ENLARGEMENT = 3;
+/** Logos may be shown at most this many times their size on the original poster (they are traced
+ * vectors so stay sharp, but tiny originals lose detail when blown up further). */
+const MAX_LOGO_ENLARGEMENT = 5;
 
 export const ReelsPoster = forwardRef<HTMLDivElement, Props>(function ReelsPoster(
   { festival, acts, onSelect },
