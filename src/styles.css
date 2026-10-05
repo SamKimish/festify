@@ -450,3 +450,16 @@ a.primary, a.secondary { display: inline-block; text-decoration: none; text-alig
   text-transform: uppercase; letter-spacing: 0.01em;
 }
 .photos-empty { position: absolute; left: 10%; width: 80%; top: 40%; text-align: center; }
+
+/* ---------- Site toggle (Reading / Leeds) ---------- */
+.poster-column { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.site-toggle { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.site-toggle button {
+  border: 1px solid var(--line); background: var(--surface); color: var(--text); font-weight: 700;
+  padding: 8px 18px; cursor: pointer;
+}
+.site-toggle button:first-of-type { border-radius: var(--radius-pill) 0 0 var(--radius-pill); }
+.site-toggle button:last-of-type { border-radius: 0 var(--radius-pill) var(--radius-pill) 0; }
+.site-toggle button.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+.site-toggle button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.site-toggle-note { margin-left: 10px; font-size: 13px; color: var(--muted); }

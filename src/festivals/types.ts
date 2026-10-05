@@ -67,6 +67,11 @@ interface FestivalBase {
   name: string;
   /** Which edition this lineup is for, e.g. "2027". Groups the drop-down. */
   edition: string;
+  /**
+   * For festivals split across sites with different bills and timetables
+   * (Reading / Leeds): one menu entry per group, and a toggle between sites.
+   */
+  site?: { group: string; label: string };
   dates: string;
   location: string;
   /** Path (relative to the site root) of the blank poster artwork. */

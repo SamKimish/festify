@@ -62,6 +62,14 @@ The "Try it with demo data" button works without any Spotify setup.
    `SPOTIFY_CLIENT_SECRET` in `.env.local`) finds Spotify IDs, so namesakes aren't mistaken for the act. Acts
    without an ID are matched by name, as is everything for Last.fm and data-export users.
 
+## Multi-site festivals
+
+Reading & Leeds share one menu entry with a Reading / Leeds toggle: each site is its own festival (`site.group`) with
+its own artwork, bill and timetable. Timetables are plain text in `festival-sources/reading-leeds-2026/`, turned into
+lineup data with `node scripts/parse-reading.mjs reading|leeds <txt> <json>`. The Leeds artwork is a provisional blank
+made from the official poster (`make-leeds-blank.cjs`); drop a real blank into
+`public/festivals/reading-leeds-2026/leeds-background.webp` to replace it.
+
 ## Brand assets
 
 `node scripts/make-brand-assets.mjs` regenerates the favicon, home-screen icon and social preview image (`public/og-image.jpg`).

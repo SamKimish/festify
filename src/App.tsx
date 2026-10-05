@@ -5,7 +5,16 @@ import { Sidebar } from './components/Sidebar';
 import { Welcome } from './components/Welcome';
 import { curate, type CuratedAct } from './curate';
 import { demoProfile } from './demo';
-import { comingSoon, festivals, festivalsByEdition, lineupOf, loadLineup, type Act } from './festivals';
+import {
+  comingSoon,
+  festivals,
+  festivalsByEdition,
+  lineupOf,
+  loadLineup,
+  menuId,
+  sitesOf,
+  type Act,
+} from './festivals';
 import { buildPoster, loadEdits, saveEdits, type PosterEdits } from './posterEdits';
 import { fetchLastfmProfile, forgetLastfmUser, LastfmError, lastfmConfigured, savedLastfmUser } from './sources/lastfm';
 import { SpotifyError } from './spotify/api';
@@ -90,7 +99,10 @@ function friendlyError(e: unknown): string {
 }
 
 /** e.g. "Primavera Sound Barcelona, Slam Dunk Festival and Glastonbury Festival". */
-const festivalList = new Intl.ListFormat('en-GB', { type: 'conjunction' }).format(festivals.map((f) => f.name));
+const festivalList = new Intl.ListFormat('en-GB', { type: 'conjunction' }).format([
+  ...new Set(festivals.map((f) => f.name)),
+]);
+const SITE_KEY = 'festify.site';
 
 export default function App() {
   const [state, setState] = useState<State>({ kind: 'starting' });
@@ -258,7 +270,15 @@ export default function App() {
         </a>
         <label className="festival-picker">
           <span className="visually-hidden">Festival</span>
-          <select value={festivalId} onChange={(e) => setFestivalId(e.target.value)}>
+          <select
+            value={menuId(festival)}
+            onChange={(e) => {
+              // Multi-site festivals reopen on the site you last picked.
+              const chosen = festivals.find((f) => f.id === e.target.value)!;
+              const lastSite = read(`${SITE_KEY}.${chosen.site?.group}`);
+              setFestivalId(sitesOf(chosen).find((f) => f.id === lastSite)?.id ?? chosen.id);
+            }}
+          >
             {festivalsByEdition.map(([edition, list]) => (
               <optgroup key={edition} label={edition}>
                 {list.map((f) => (
@@ -356,6 +376,27 @@ export default function App() {
               {isDemo ? 'Demo' : 'Your'} {editionName} lineup
             </h1>
             {isDemo && <p className="demo-banner">Demo data: these are made-up listening stats.</p>}
+            <div className="poster-column">
+            {festival.site && (
+              <div className="site-toggle" role="radiogroup" aria-label="Festival site">
+                {sitesOf(festival).map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={f.id === festival.id}
+                    className={f.id === festival.id ? 'active' : ''}
+                    onClick={() => {
+                      setFestivalId(f.id);
+                      write(`${SITE_KEY}.${f.site!.group}`, f.id);
+                    }}
+                  >
+                    {f.site!.label}
+                  </button>
+                ))}
+                <span className="site-toggle-note">Different bill, days and set times</span>
+              </div>
+            )}
             <div className="poster-wrap">
               {lineup ? (
                 <Poster
@@ -387,6 +428,7 @@ export default function App() {
               )}
             </div>
 
+            </div>
             <Sidebar
               festival={festival}
               lineup={lineup}
