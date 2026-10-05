@@ -32,6 +32,9 @@ function storedFestival(): string {
   return festivals[0].id;
 }
 
+/** e.g. "Primavera Sound Barcelona 2027 and Slam Dunk Festival 2027". */
+const festivalList = new Intl.ListFormat('en-GB', { type: 'conjunction' }).format(festivals.map((f) => f.name));
+
 export default function App() {
   const [state, setState] = useState<State>({ kind: 'starting' });
   const [festivalId, setFestivalId] = useState(storedFestival);
@@ -136,9 +139,10 @@ export default function App() {
               your headliners
             </h1>
             <p>
-              Log in with Spotify and we'll rebuild the {festival.name} poster around the artists you
-              actually listen to. Your favourite act on the small print? They're headlining now.
+              Log in with Spotify, pick a festival and we'll rebuild its official lineup poster around the
+              artists you actually listen to. Your favourite act on the small print? They're headlining now.
             </p>
+            <p className="welcome-festivals">Now playing: {festivalList}.</p>
             {state.error && <p className="error">{state.error}</p>}
             <div className="welcome-actions">
               {isConfigured ? (
@@ -246,8 +250,7 @@ export default function App() {
       )}
 
       <footer className="footer">
-        Unofficial fan project. Not affiliated with {festival.name.replace(/ \d{4}$/, '')} or Spotify. Data from
-        Spotify.
+        Unofficial fan project. Not affiliated with any festival or with Spotify. Data from Spotify.
       </footer>
     </div>
   );

@@ -227,3 +227,4 @@ main { flex: 1; padding: 24px; }
 .logo-button:hover, .logo-button:focus-visible { transform: scale(1.06); outline: none; }
 .logo-text { display: inline-block; line-height: 1; white-space: nowrap; text-transform: uppercase; }
 .reels-empty { position: absolute; left: 25%; width: 50%; text-align: center; }
+.welcome .welcome-festivals { font-size: 15px; color: var(--muted); margin-top: -4px; }
