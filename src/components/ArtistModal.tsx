@@ -68,7 +68,6 @@ export function ArtistModal({ curated, festival, profile, demo, onClose }: Props
         aria-label={curated.act.display}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        style={{ fontFamily: festival.theme.fontFamily }}
       >
         <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
           ×

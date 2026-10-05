@@ -79,6 +79,12 @@ export default function App() {
     }
   }, [festivalId]);
 
+  // The demo listener is invented per festival, so make a new one on switching.
+  const isDemo = state.kind === 'ready' && state.demo;
+  useEffect(() => {
+    if (isDemo) setState({ kind: 'ready', profile: demoProfile(festival), demo: true });
+  }, [festival, isDemo]);
+
   const profile = state.kind === 'ready' ? state.profile : null;
   const acts = useMemo(() => (profile ? curate(festival, profile) : []), [festival, profile]);
 

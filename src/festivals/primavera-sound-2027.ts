@@ -1,24 +1,5 @@
-import type { Act, ActMember, Festival } from './types';
-
-/**
- * Builds an act. By default the members are taken from the display text:
- * "LIVE" / "(LIVE AV)" suffixes are dropped and "B2B", "&" and "x" split it
- * into separate artists. Pass `members` to override (e.g. for band names that
- * contain "&"). Spotify IDs can be filled in with `npm run resolve-ids`.
- */
-function act(display: string, billing: number, members?: (string | ActMember)[]): Act {
-  const names =
-    members ??
-    display
-      .replace(/\s*\(LIVE AV\)$/i, '')
-      .replace(/\s+LIVE$/i, '')
-      .split(/\s+(?:B2B|&|x)\s+/i);
-  return {
-    display,
-    billing,
-    members: names.map((m) => (typeof m === 'string' ? { name: m } : m)),
-  };
-}
+import { act } from './act';
+import type { Act, ColumnsFestival } from './types';
 
 const lineup: Act[] = [
   // Top line
@@ -188,8 +169,9 @@ const lineup: Act[] = [
   act('WARNING', 3),
 ];
 
-export const primaveraSound2027: Festival = {
+export const primaveraSound2027: ColumnsFestival = {
   id: 'primavera-sound-2027',
+  layout: 'columns',
   name: 'Primavera Sound Barcelona 2027',
   dates: '2–6 June 2027',
   location: 'Parc del Fòrum, Barcelona',

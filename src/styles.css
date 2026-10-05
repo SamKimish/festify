@@ -215,3 +215,15 @@ main { flex: 1; padding: 24px; }
   padding: 12px 18px; border-radius: 999px; background: var(--text); color: var(--bg);
   font-size: 14px; font-weight: 600; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
+
+/* ---------- Reels (logo) posters ---------- */
+.reel { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 1cqw; }
+.reel-row { display: flex; justify-content: center; align-items: center; gap: 3cqw; }
+.logo-button {
+  background: none; border: 0; padding: 0; cursor: pointer; display: block; line-height: 0;
+  transition: transform 0.12s ease-out;
+}
+.logo-button img { display: block; width: auto; }
+.logo-button:hover, .logo-button:focus-visible { transform: scale(1.06); outline: none; }
+.logo-text { display: inline-block; line-height: 1; white-space: nowrap; text-transform: uppercase; }
+.reels-empty { position: absolute; left: 25%; width: 50%; text-align: center; }

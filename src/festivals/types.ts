@@ -32,6 +32,8 @@ export interface Act {
    * clickable when the user listens to them.
    */
   fixed?: Zone;
+  /** Logo image (path relative to the site root) and its pixel size, for logo posters. */
+  logo?: { src: string; width: number; height: number };
 }
 
 export interface FestivalTheme {
@@ -46,7 +48,7 @@ export interface FestivalTheme {
   dotColors: string[];
 }
 
-export interface Festival {
+interface FestivalBase {
   id: string;
   name: string;
   dates: string;
@@ -57,6 +59,12 @@ export interface Festival {
   width: number;
   height: number;
   theme: FestivalTheme;
+  lineup: Act[];
+}
+
+/** Text lineup flowing through columns (e.g. Primavera Sound). */
+export interface ColumnsFestival extends FestivalBase {
+  layout: 'columns';
   zones: {
     /** Headliners, one per line; `h` is the most height they may take. */
     header: Zone;
@@ -67,5 +75,13 @@ export interface Festival {
     /** "curated for <name>" block. */
     credit: Zone;
   };
-  lineup: Act[];
 }
+
+/** Logo lineup split across stacked panels, best first (e.g. Slam Dunk's slot-machine reels). */
+export interface ReelsFestival extends FestivalBase {
+  layout: 'reels';
+  /** Inner area of each panel, top to bottom. */
+  reels: Zone[];
+}
+
+export type Festival = ColumnsFestival | ReelsFestival;
