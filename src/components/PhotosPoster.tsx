@@ -43,6 +43,8 @@ function splitName(name: string, width: (s: string) => number): string[] {
 
 interface HeadlinerLayout {
   sizes: number[]; // cqw, per headliner
+  /** Vertical stretch per headliner, so every name fills the space above its photo. */
+  stretch: number[];
   names: string[][]; // lines per headliner
   /** Which line of a two-line name gets the flanking stars (the narrower one). */
   flank: number[];
@@ -50,6 +52,8 @@ interface HeadlinerLayout {
 
 /** Width the two flanking stars add to a line, in em (see .photo-star). */
 const STARS_EM = 1.15;
+/** Most a headliner name is stretched vertically. */
+const MAX_STRETCH = 2.6;
 
 /** Short names may print bigger than long ones, but no more than this. */
 const MAX_NAME_RATIO = 1.35;
@@ -104,6 +108,9 @@ export const PhotosPoster = forwardRef<HTMLDivElement, Props>(function PhotosPos
     });
     const smallest = Math.min(...fit);
     const sizes = fit.map((f) => Math.min(f, smallest * MAX_NAME_RATIO));
+    // Tall condensed lettering like the poster: same width, stretched to fill the
+    // name area (two lines' worth, so every name ends up the same height).
+    const stretch = sizes.map((s) => Math.max(1, Math.min(MAX_STRETCH, nameHeight / (2 * NAME_LINE_HEIGHT * s))));
 
     // Everyone else: bullet-separated lines, measured in the hidden layer.
     const els = [...(measureRef.current?.children ?? [])] as HTMLElement[];
@@ -114,7 +121,7 @@ export const PhotosPoster = forwardRef<HTMLDivElement, Props>(function PhotosPos
       measure,
       REST_LINES,
     );
-    setComputed({ acts, head: { sizes, names, flank }, rest: lines });
+    setComputed({ acts, head: { sizes, stretch, names, flank }, rest: lines });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [acts, festival]);
 
@@ -151,8 +158,15 @@ export const PhotosPoster = forwardRef<HTMLDivElement, Props>(function PhotosPos
               >
                 <span
                   className="photo-name"
-                  style={{ height: `${H.nameShare * 100}%`, fontSize: `${layout.head.sizes[i]}cqw` }}
+                  style={
+                    {
+                      height: `${H.nameShare * 100}%`,
+                      fontSize: `${layout.head.sizes[i]}cqw`,
+                      '--stretch': layout.head.stretch[i],
+                    } as CSSProperties
+                  }
                 >
+                  <span className="photo-name-inner">
                   {lines.length === 1 && <span className="photo-star">★</span>}
                   {lines.map((line, l) => {
                     // Stars flank the shorter line of a two-line name, like the poster.
@@ -173,6 +187,7 @@ export const PhotosPoster = forwardRef<HTMLDivElement, Props>(function PhotosPos
                     );
                   })}
                   {lines.length === 1 && <span className="photo-star">★</span>}
+                  </span>
                 </span>
                 <span className="photo-frame" style={{ background: colors.photoTint }}>
                   {photo ? (

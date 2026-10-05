@@ -1,6 +1,9 @@
 const baseOptions = {
   // Only embed the woff2 files (browsers that render the poster all support them).
   preferredFontFormat: 'woff2',
+  // Proxied photo URLs differ only in their query string; without this the
+  // exporter's cache treats them as one image and repeats the first photo.
+  includeQueryParams: true,
   // Skip the hidden word-measuring layer.
   filter: (node: HTMLElement) => !(node instanceof HTMLElement && node.classList.contains('measure')),
 };

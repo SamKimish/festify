@@ -37,7 +37,7 @@ export const readingLeeds2026: PhotosFestival = {
   },
   // Measured on the 1200×1500 artwork: headliners between the logo and the
   // first rule, everyone else between the two rules, credit under the second.
-  headliners: { zone: { x: 1.7, y: 17.8, w: 96.6, h: 37 }, count: 6, nameShare: 0.34 },
+  headliners: { zone: { x: 1.7, y: 16, w: 96.6, h: 38.8 }, count: 5, nameShare: 0.36 },
   rest: { zone: { x: 6, y: 60.4, w: 88, h: 26.2 }, label: 'Special guests' },
   credit: { x: 6, y: 89, w: 88, h: 4 },
   colors: {

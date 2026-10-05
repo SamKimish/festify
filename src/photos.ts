@@ -4,7 +4,7 @@ import { fetchArtist, pickImage, type ListeningProfile } from './spotify/profile
 /**
  * Artist photos for photo-led posters. Spotify logins use Spotify's artist
  * images; everyone else (and added / suggested acts) gets TheAudioDB's photo,
- * looked up by name. Images must be served with CORS headers or the PNG export
+ * or Deezer's, looked up by name. Images must be served with CORS headers or the PNG export
  * can't include them: Spotify's CDN does, TheAudioDB's image host doesn't, so
  * those go through the images.weserv.nl proxy (which also crops to the face).
  */
@@ -19,7 +19,8 @@ export function posterPhoto(url: string): string {
 }
 
 const CACHE_DAYS = 30;
-const cacheKey = (name: string) => `festify.photo.${normalizeName(name)}`;
+// (v2: v1 only tried TheAudioDB, so its "no photo" answers are stale.)
+const cacheKey = (name: string) => `festify.photo2.${normalizeName(name)}`;
 
 function cached(name: string): string | null | undefined {
   try {
@@ -41,20 +42,67 @@ function remember(name: string, url: string | null) {
 }
 
 async function audioDbPhoto(name: string): Promise<string | null> {
-  const hit = cached(name);
-  if (hit !== undefined) return hit;
   try {
     const res = await fetch(AUDIODB + encodeURIComponent(name));
     const json = await res.json();
     const artist = (json?.artists ?? []).find(
       (a: { strArtist: string }) => normalizeName(a.strArtist) === normalizeName(name),
     );
-    const url = artist?.strArtistThumb ?? null;
-    remember(name, url);
-    return url;
+    return artist?.strArtistThumb ?? null;
   } catch {
     return null;
   }
+}
+
+/** Deezer's API has no CORS headers but supports JSONP, so load it as a script. */
+function jsonp<T>(url: string, timeoutMs = 8000): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const name = `__festifyDeezer${Math.random().toString(36).slice(2)}`;
+    const script = document.createElement('script');
+    const w = window as unknown as Record<string, unknown>;
+    const done = () => {
+      delete w[name];
+      script.remove();
+      clearTimeout(timer);
+    };
+    const timer = setTimeout(() => {
+      done();
+      reject(new Error('timeout'));
+    }, timeoutMs);
+    w[name] = (data: T) => {
+      done();
+      resolve(data);
+    };
+    script.onerror = () => {
+      done();
+      reject(new Error('failed'));
+    };
+    script.src = `${url}&output=jsonp&callback=${name}`;
+    document.head.appendChild(script);
+  });
+}
+
+/** Deezer covers smaller artists TheAudioDB doesn't. */
+async function deezerPhoto(name: string): Promise<string | null> {
+  try {
+    const res = await jsonp<{ data?: { name: string; picture_xl?: string }[] }>(
+      `https://api.deezer.com/search/artist?q=${encodeURIComponent(name)}&limit=5`,
+    );
+    const artist = res.data?.find((a) => normalizeName(a.name) === normalizeName(name));
+    // Artists without a photo get a generic placeholder with an empty image ID.
+    return artist?.picture_xl && !artist.picture_xl.includes('/artist//') ? artist.picture_xl : null;
+  } catch {
+    return null;
+  }
+}
+
+/** TheAudioDB first (press shots), then Deezer; the answer is cached either way. */
+async function lookupPhoto(name: string): Promise<string | null> {
+  const hit = cached(name);
+  if (hit !== undefined) return hit;
+  const url = (await audioDbPhoto(name)) ?? (await deezerPhoto(name));
+  remember(name, url);
+  return url;
 }
 
 /** Best photo URL for an act, or null if none can be found. */
@@ -69,8 +117,8 @@ export async function photoFor(a: CuratedAct, profile: ListeningProfile): Promis
         return url;
       }
     } catch {
-      /* fall back to TheAudioDB */
+      /* fall back to TheAudioDB / Deezer */
     }
   }
-  return audioDbPhoto(a.act.members[0]?.name ?? a.act.display);
+  return lookupPhoto(a.act.members[0]?.name ?? a.act.display);
 }
