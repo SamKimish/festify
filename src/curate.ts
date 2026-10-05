@@ -28,7 +28,6 @@ const RECENT_WEIGHT = 0.25;
 const FOLLOW_BONUS = 0.05;
 
 export const HEADLINER_COUNT = 4;
-export const SECOND_TIER_COUNT = 30;
 
 export interface ScoredArtist {
   stats: ArtistStats;
@@ -42,7 +41,6 @@ export interface CuratedAct {
   score: number;
   /** Matched Spotify artists, best first. */
   artists: ScoredArtist[];
-  tier: 0 | 1 | 2;
 }
 
 export function normalizeName(name: string): string {
@@ -98,7 +96,7 @@ export function curate(festival: Festival, profile: ListeningProfile): CuratedAc
     byName.set(key, [...(byName.get(key) ?? []), s]);
   }
 
-  const results: Omit<CuratedAct, 'tier'>[] = [];
+  const results: CuratedAct[] = [];
   festival.lineup.forEach((act) => {
     const matched = new Map<string, ScoredArtist>();
     for (const m of act.members) {
@@ -120,10 +118,7 @@ export function curate(festival: Festival, profile: ListeningProfile): CuratedAc
       a.act.billing - b.act.billing ||
       festival.lineup.indexOf(a.act) - festival.lineup.indexOf(b.act),
   );
-  return results.map((r, i) => ({
-    ...r,
-    tier: i < HEADLINER_COUNT ? 0 : i < HEADLINER_COUNT + SECOND_TIER_COUNT ? 1 : 2,
-  }));
+  return results;
 }
 
 export interface SongEntry {

@@ -6,6 +6,12 @@ export interface Zone {
   h: number;
 }
 
+/** A column the lineup text flows through. */
+export interface Region extends Zone {
+  /** Start below the headliners rather than at `y` if they reach further down. */
+  belowHeader?: boolean;
+}
+
 /** One Spotify artist that performs as part of an act. */
 export interface ActMember {
   name: string;
@@ -20,6 +26,12 @@ export interface Act {
   members: ActMember[];
   /** Billing on the official poster: 0 = top line, higher = smaller print. */
   billing: number;
+  /**
+   * Set when the act is already printed on the background artwork (e.g. the
+   * closing set). It stays out of the generated lineup, and this area becomes
+   * clickable when the user listens to them.
+   */
+  fixed?: Zone;
 }
 
 export interface FestivalTheme {
@@ -46,10 +58,12 @@ export interface Festival {
   height: number;
   theme: FestivalTheme;
   zones: {
-    /** Headliners plus second-tier acts. */
-    top: Zone;
-    /** Small-print acts. */
-    bottom: Zone;
+    /** Headliners, one per line; `h` is the most height they may take. */
+    header: Zone;
+    /** Columns for second-tier acts, in reading order. */
+    mid: Region[];
+    /** Columns for small-print acts, in reading order. */
+    small: Region[];
     /** "curated for <name>" block. */
     credit: Zone;
   };

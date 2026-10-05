@@ -4,4 +4,4 @@ import type { Festival } from './types';
 /** Festivals shown in the drop-down, in display order. */
 export const festivals: Festival[] = [primaveraSound2027];
 
-export type { Festival, Act, ActMember, Zone } from './types';
+export type { Festival, Act, ActMember, Region, Zone } from './types';

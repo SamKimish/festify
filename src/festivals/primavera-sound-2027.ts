@@ -36,7 +36,8 @@ const lineup: Act[] = [
   act('ADÉLA', 0),
   act('CAROLINE POLACHEK', 0),
   act('PROSPA', 0),
-  act('SKRILLEX B2B NINAJIRACHI', 0),
+  // Closing set: printed on the artwork itself, so it isn't placed again.
+  { ...act('SKRILLEX B2B NINAJIRACHI', 0), fixed: { x: 2.8, y: 32.4, w: 31.5, h: 3.4 } },
 
   // Second line
   act('PAVEMENT', 1),
@@ -192,9 +193,9 @@ export const primaveraSound2027: Festival = {
   name: 'Primavera Sound Barcelona 2027',
   dates: '2–6 June 2027',
   location: 'Parc del Fòrum, Barcelona',
-  background: 'festivals/primavera-sound-2027/background.png',
-  width: 800,
-  height: 1067,
+  background: 'festivals/primavera-sound-2027/background.webp',
+  width: 1500,
+  height: 2000,
   theme: {
     fontFamily: "'Archivo Variable', 'Helvetica Neue', Arial, sans-serif",
     fontVariation: "'wdth' 88",
@@ -206,13 +207,23 @@ export const primaveraSound2027: Festival = {
       '#AFCDEE', '#D3C2E6', '#D7283F', '#BDB5A6', '#5A2B1C', '#9B3D6E', '#0B4A80',
     ],
   },
-  // Measured against the 800×1067 blank artwork: the top block stops above the
-  // "parc del fòrum" line, the bottom block stays left of the logo and above
-  // the partner strip.
+  // Measured against the 1500×2000 artwork (percent of width / height). The
+  // left column is interrupted by the closing set and the strategic partner
+  // logos; the small print sits left of the logo and above the partner strip.
   zones: {
-    top: { x: 2.75, y: 1.2, w: 94.5, h: 58.3 },
-    bottom: { x: 2.75, y: 66.8, w: 65.5, h: 26.8 },
-    credit: { x: 70.6, y: 68, w: 26.6, h: 13.5 },
+    header: { x: 2.75, y: 1.3, w: 94.5, h: 15 },
+    mid: [
+      { x: 2.75, y: 1.3, w: 31.5, h: 27.9, belowHeader: true }, // above "closing*set"
+      { x: 12, y: 37, w: 22.5, h: 21.5 }, // beside the partner logos
+      { x: 36.5, y: 1.3, w: 29, h: 57.4, belowHeader: true },
+      { x: 67.6, y: 1.3, w: 29.9, h: 57.4, belowHeader: true },
+    ],
+    small: [
+      { x: 2.75, y: 61.8, w: 20.3, h: 32.4 },
+      { x: 24.6, y: 61.8, w: 20.3, h: 32.4 },
+      { x: 47, y: 67.6, w: 20.8, h: 26.6 },
+    ],
+    credit: { x: 70.6, y: 68.2, w: 26.6, h: 12 },
   },
   lineup,
 };

@@ -93,7 +93,11 @@ export default function App() {
     if (!posterRef.current) return;
     setDownloading(true);
     try {
-      const url = await toPng(posterRef.current, { pixelRatio: 2, cacheBust: true });
+      const url = await toPng(posterRef.current, {
+        pixelRatio: 2,
+        cacheBust: true,
+        filter: (node) => !(node instanceof HTMLElement && node.classList.contains('measure')),
+      });
       const a = document.createElement('a');
       a.href = url;
       a.download = `festify-${festival.id}.png`;

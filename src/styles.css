@@ -112,11 +112,11 @@ main { flex: 1; padding: 24px; }
 }
 .poster-bg { position: absolute; inset: 0; width: 100%; height: 100%; user-select: none; }
 .zone { position: absolute; }
-.zone-top { display: flex; flex-direction: column; }
-.headliners { flex: none; padding-bottom: 0.6cqw; }
-.cols { column-gap: 2.2cqw; column-fill: balance; height: 100%; }
-.cols-mid { flex: 1 1 0; min-height: 0; column-count: 3; }
-.cols-small { column-count: 3; }
+.headliners { display: flex; flex-direction: column; }
+.measure { position: absolute; inset: 0; visibility: hidden; pointer-events: none; overflow: hidden; }
+.measure > * { display: block; width: max-content; white-space: nowrap; font-size: inherit; }
+.fixed-hotspot { position: absolute; background: none; border: 0; padding: 0; cursor: pointer; border-radius: 4px; }
+.fixed-hotspot:hover, .fixed-hotspot:focus-visible { background: rgba(226, 90, 29, 0.12); outline: none; }
 
 .name {
   display: block; background: none; border: 0; padding: 0; margin: 0; cursor: pointer;
