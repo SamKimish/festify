@@ -117,7 +117,7 @@ export function ArtistModal({ curated, festival, profile, spotifyLookups, onClos
                 <div>
                   <h2 className="artist-name">{artist.stats.name}</h2>
                   <ul className="artist-reasons">
-                    {reasonsFor(artist.stats, profile.source).map((r) => (
+                    {reasonsFor(artist.stats, profile).map((r) => (
                       <li key={r}>{r}</li>
                     ))}
                   </ul>

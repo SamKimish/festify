@@ -16,7 +16,15 @@ import {
   type Act,
 } from './festivals';
 import { buildPoster, loadEdits, saveEdits, type PosterEdits } from './posterEdits';
-import { fetchLastfmProfile, forgetLastfmUser, LastfmError, lastfmConfigured, savedLastfmUser } from './sources/lastfm';
+import {
+  fetchLastfmProfile,
+  forgetLastfmUser,
+  LASTFM_PERIODS,
+  LastfmError,
+  lastfmConfigured,
+  savedLastfmUser,
+  type LastfmPeriod,
+} from './sources/lastfm';
 import { SpotifyError } from './spotify/api';
 import { handleRedirect, isConfigured, isLoggedIn, login, logout, redirectUri } from './spotify/auth';
 import {
@@ -103,6 +111,7 @@ const festivalList = new Intl.ListFormat('en-GB', { type: 'conjunction' }).forma
   ...new Set(festivals.map((f) => f.name)),
 ]);
 const SITE_KEY = 'festify.site';
+const PERIOD_KEY = 'festify.lastfm.period';
 
 export default function App() {
   const [state, setState] = useState<State>({ kind: 'starting' });
@@ -137,13 +146,27 @@ export default function App() {
     [run],
   );
 
+  // Last.fm users can choose how far back to look (all time by default).
+  const [lastfmPeriod, setLastfmPeriod] = useState<LastfmPeriod>(() => {
+    const saved = read(PERIOD_KEY);
+    return LASTFM_PERIODS.some((p) => p.id === saved) ? (saved as LastfmPeriod) : 'overall';
+  });
+
+  // Read through a ref so Refresh / retry always use the current choice.
+  const periodRef = useRef(lastfmPeriod);
+  periodRef.current = lastfmPeriod;
+
   const loadLastfm = useCallback(
-    (username: string, force = false) => {
+    (username: string, force = false, period: LastfmPeriod = periodRef.current) => {
       const cached = force ? null : loadCachedProfile();
-      if (cached?.source === 'lastfm' && cached.userId.toLowerCase() === username.toLowerCase()) {
+      if (
+        cached?.source === 'lastfm' &&
+        cached.userId.toLowerCase() === username.toLowerCase() &&
+        (cached.period ?? 'overall') === period
+      ) {
         return setState({ kind: 'ready', profile: cached });
       }
-      return run((p) => fetchLastfmProfile(username, p), !savedLastfmUser());
+      return run((p) => fetchLastfmProfile(username, period, p), !savedLastfmUser());
     },
     [run],
   );
@@ -443,6 +466,12 @@ export default function App() {
                 loading: suggested.loading && suggested.key === suggestKey,
                 failed: suggested.failed && suggested.key === suggestKey,
                 count: activeSuggestions.filter((s) => poster.acts.includes(s)).length,
+              }}
+              lastfmPeriod={profile?.source === 'lastfm' ? ((profile.period as LastfmPeriod) ?? 'overall') : undefined}
+              onLastfmPeriod={(period) => {
+                setLastfmPeriod(period);
+                write(PERIOD_KEY, period);
+                if (profile?.source === 'lastfm') loadLastfm(profile.userId, true, period);
               }}
               onToggleSuggestions={(on) => {
                 setSuggestOn(on);

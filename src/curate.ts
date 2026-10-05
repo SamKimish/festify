@@ -185,13 +185,17 @@ const RANGE_LABELS: Partial<Record<ListeningProfile['source'], Record<TimeRange,
 };
 
 /** Short human-readable reasons, e.g. "#3 in your top artists (last 6 months)". */
-export function reasonsFor(stats: ArtistStats, source?: ListeningProfile['source']): string[] {
+export function reasonsFor(
+  stats: ArtistStats,
+  profile?: Pick<ListeningProfile, 'source' | 'rangeLabels'>,
+): string[] {
+  const source = profile?.source;
   const reasons: string[] = [];
   if (stats.plays) reasons.push(`${stats.plays.toLocaleString()} play${stats.plays === 1 ? '' : 's'}`);
   const best = TIME_RANGES.filter((r) => stats.topRanks[r] !== undefined).sort(
     (a, b) => stats.topRanks[a]! - stats.topRanks[b]!,
   )[0];
-  const label = (source && RANGE_LABELS[source]) || RANGE_LABEL;
+  const label = { ...RANGE_LABEL, ...(source && RANGE_LABELS[source]), ...profile?.rangeLabels };
   if (best) reasons.push(`#${stats.topRanks[best]! + 1} in your top artists (${label[best]})`);
   const topTrackCount = new Set(stats.topTracks.map((t) => t.trackId)).size;
   if (topTrackCount) reasons.push(`${topTrackCount} of your top tracks`);

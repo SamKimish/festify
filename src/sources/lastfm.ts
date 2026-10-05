@@ -7,8 +7,37 @@ const API = 'https://ws.audioscrobbler.com/2.0/';
 const USER_KEY = 'festify.lastfm';
 /** How many top artists / tracks to read per period. */
 const TOP_SIZE = 200;
-/** Last.fm periods standing in for Spotify's short / medium / long term. */
-const PERIODS: Record<TimeRange, string> = { short_term: '1month', medium_term: '6month', long_term: 'overall' };
+/** How far back to look, as offered in the sidebar. */
+export type LastfmPeriod = 'overall' | '12month' | '6month' | '3month' | '1month';
+export const LASTFM_PERIODS: { id: LastfmPeriod; label: string }[] = [
+  { id: 'overall', label: 'All time' },
+  { id: '12month', label: 'Last 12 months' },
+  { id: '6month', label: 'Last 6 months' },
+  { id: '3month', label: 'Last 3 months' },
+  { id: '1month', label: 'Last month' },
+];
+
+/**
+ * Last.fm periods standing in for Spotify's short / medium / long term, for each
+ * choice: the whole window, plus shorter ones inside it so recent listening
+ * still counts for a bit more.
+ */
+const LADDERS: Record<LastfmPeriod, Partial<Record<TimeRange, string>>> = {
+  overall: { short_term: '1month', medium_term: '6month', long_term: 'overall' },
+  '12month': { short_term: '1month', medium_term: '6month', long_term: '12month' },
+  '6month': { short_term: '1month', medium_term: '3month', long_term: '6month' },
+  '3month': { short_term: '7day', medium_term: '1month', long_term: '3month' },
+  '1month': { short_term: '7day', long_term: '1month' },
+};
+const PERIOD_LABEL: Record<string, string> = {
+  '7day': 'last 7 days',
+  '1month': 'last month',
+  '3month': 'last 3 months',
+  '6month': 'last 6 months',
+  '12month': 'last 12 months',
+  overall: 'all time',
+};
+const PERIOD_DAYS: Record<LastfmPeriod, number> = { overall: Infinity, '12month': 365, '6month': 182, '3month': 91, '1month': 30 };
 
 export const lastfmConfigured = Boolean(KEY);
 
@@ -62,17 +91,24 @@ export function forgetLastfmUser() {
 }
 
 /** Builds a listening profile from a public Last.fm account (no login needed). */
-export async function fetchLastfmProfile(username: string, onProgress: Progress): Promise<ListeningProfile> {
+export async function fetchLastfmProfile(
+  username: string,
+  period: LastfmPeriod,
+  onProgress: Progress,
+): Promise<ListeningProfile> {
   onProgress('Finding your Last.fm profile…', 0);
   const info = await lastfm<{ user: { name: string; realname?: string } }>('user.getinfo', { user: username });
   const b = new ProfileBuilder('lastfm', info.user.name, info.user.realname || info.user.name, TOP_SIZE);
+  const ladder = LADDERS[period];
+  b.profile.period = period;
+  b.profile.rangeLabels = Object.fromEntries(Object.entries(ladder).map(([r, p]) => [r, PERIOD_LABEL[p!]]));
   try {
     localStorage.setItem(USER_KEY, info.user.name);
   } catch {
     /* storage unavailable */
   }
 
-  const ranges = Object.entries(PERIODS) as [TimeRange, string][];
+  const ranges = Object.entries(ladder) as [TimeRange, string][];
   let step = 0;
   const total = ranges.length * 2 + 2;
   const tick = (message: string) => onProgress(message, ++step / total);
@@ -103,8 +139,12 @@ export async function fetchLastfmProfile(username: string, onProgress: Progress)
       'user.getlovedtracks',
       { user: info.user.name, limit: 1000 },
     );
+    // Only tracks loved within the chosen window.
+    const since = Date.now() - PERIOD_DAYS[period] * 864e5;
     for (const t of list(loved.lovedtracks.track)) {
-      b.liked(artistName(t), t.name, t.date ? new Date(Number(t.date.uts) * 1000).toISOString() : '');
+      const lovedAt = t.date ? Number(t.date.uts) * 1000 : 0;
+      if (period !== 'overall' && lovedAt < since) continue;
+      b.liked(artistName(t), t.name, lovedAt ? new Date(lovedAt).toISOString() : '');
     }
   } catch {
     b.profile.warnings.push('loved tracks');

@@ -4,6 +4,7 @@ import { reasonsFor, type CuratedAct } from '../curate';
 import type { Act, Festival } from '../festivals';
 import { hasEdits, type PosterEdits } from '../posterEdits';
 import { hasScope, login } from '../spotify/auth';
+import { LASTFM_PERIODS, type LastfmPeriod } from '../sources/lastfm';
 import { createPosterPlaylist } from '../spotify/playlist';
 import type { ListeningProfile } from '../spotify/profile';
 import { ActLabel } from './ActLabel';
@@ -19,6 +20,9 @@ interface Props {
   onEdits: (edits: PosterEdits) => void;
   suggestions: { available: boolean; enabled: boolean; loading: boolean; count: number; failed: boolean };
   onToggleSuggestions: (on: boolean) => void;
+  /** Last.fm users only: the listening window, and changing it. */
+  lastfmPeriod?: LastfmPeriod;
+  onLastfmPeriod: (period: LastfmPeriod) => void;
   posterRef: RefObject<HTMLDivElement | null>;
   onSelect: (act: CuratedAct) => void;
 }
@@ -59,6 +63,22 @@ export function Sidebar(props: Props) {
           <PlaylistButton acts={acts} profile={profile} title={`My ${editionName} lineup`} />
         )}
       </div>
+
+      {props.lastfmPeriod && (
+        <label className="period-picker">
+          <span>Listening from</span>
+          <select
+            value={props.lastfmPeriod}
+            onChange={(e) => props.onLastfmPeriod(e.target.value as LastfmPeriod)}
+          >
+            {LASTFM_PERIODS.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       {props.suggestions.available && (
         <label className="switch-row">
@@ -215,7 +235,7 @@ export function Sidebar(props: Props) {
 function whyLine(a: CuratedAct, profile: ListeningProfile): string {
   if (a.origin === 'added') return 'Added by you';
   if (a.origin === 'suggested') return `You might like · similar to ${(a.because ?? []).slice(0, 2).join(' & ')}`;
-  return reasonsFor(a.artists[0].stats, profile.source).slice(0, 2).join(' · ');
+  return reasonsFor(a.artists[0].stats, profile).slice(0, 2).join(' · ');
 }
 
 function ClashAct(props: { act: CuratedAct; stage: string; time: string; onSelect: (a: CuratedAct) => void }) {

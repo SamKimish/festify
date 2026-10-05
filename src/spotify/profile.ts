@@ -60,6 +60,10 @@ export interface ListeningProfile {
   artists: Record<string, ArtistStats>;
   /** Parts of the data Spotify refused to return (e.g. endpoint restricted). */
   warnings: string[];
+  /** Last.fm: the listening window chosen (e.g. "12month"); absent = all time. */
+  period?: string;
+  /** What each time range covers, when it differs from the source's default. */
+  rangeLabels?: Partial<Record<TimeRange, string>>;
 }
 
 export const PROFILE_VERSION = 2;
