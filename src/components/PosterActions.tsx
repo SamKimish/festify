@@ -62,13 +62,38 @@ export function PosterActions({ posterRef, version, filename, shareText, width }
     return () => clearTimeout(timer);
   }, [toast]);
 
+  // Phones save downloads to Files (iOS) or Downloads; the share sheet's "Save
+  // Image" puts the poster in Photos instead, so use that on touch devices.
+  const saveToPhotos = nativeShare && window.matchMedia('(pointer: coarse)').matches;
+  const [preview, setPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!preview) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setPreview(null);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
   const download = async () => {
     setBusy('download');
+    let blob: Blob | null = null;
     try {
-      downloadBlob(await getBlob(), filename);
+      blob = await getBlob();
+      if (saveToPhotos) {
+        // Just the image (no text), so the sheet offers "Save Image".
+        await navigator.share({ files: [new File([blob], filename, { type: 'image/png' })] });
+      } else {
+        downloadBlob(blob, filename);
+      }
     } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') return; // closed the sheet
       console.error(e);
-      setToast("Sorry, the poster couldn't be saved.");
+      // Fallback: show the image so it can be pressed and held → "Save to Photos".
+      if (blob && saveToPhotos) setPreview(URL.createObjectURL(blob));
+      else setToast("Sorry, the poster couldn't be saved.");
     } finally {
       setBusy(null);
     }
@@ -115,7 +140,7 @@ export function PosterActions({ posterRef, version, filename, shareText, width }
   return (
     <div ref={rootRef} className="poster-actions">
       <button type="button" className="primary" onClick={download} disabled={busy !== null}>
-        {busy === 'download' ? 'Saving…' : 'Download PNG'}
+        {busy === 'download' ? 'Saving…' : saveToPhotos ? 'Save image' : 'Download PNG'}
       </button>
       <button
         type="button"
@@ -138,6 +163,23 @@ export function PosterActions({ posterRef, version, filename, shareText, width }
             </a>
           ))}
           <p className="share-hint">These links can't attach the image. Copy or download it first, then paste it in.</p>
+        </div>
+      )}
+
+      {preview && (
+        <div className="modal-backdrop save-preview" onClick={() => setPreview(null)}>
+          <div className="save-preview-card" role="dialog" aria-modal="true" aria-label="Save your poster" onClick={(e) => e.stopPropagation()}>
+            <img src={preview} alt="Your festival poster" />
+            <p>Press and hold the poster, then tap “Save to Photos”.</p>
+            <div className="save-preview-actions">
+              <button type="button" className="secondary small" onClick={() => setPreview(null)}>
+                Done
+              </button>
+              <button type="button" className="link-button" onClick={() => getBlob().then((b) => downloadBlob(b, filename))}>
+                Download file instead
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
