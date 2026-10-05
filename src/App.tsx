@@ -4,7 +4,7 @@ import { Poster } from './components/Poster';
 import { PosterActions } from './components/PosterActions';
 import { curate, reasonsFor, type CuratedAct } from './curate';
 import { demoProfile } from './demo';
-import { festivals } from './festivals';
+import { comingSoon, festivals, festivalsByEdition } from './festivals';
 import { handleRedirect, isConfigured, isLoggedIn, login, logout, redirectUri } from './spotify/auth';
 import {
   clearCachedProfile,
@@ -106,11 +106,24 @@ export default function App() {
         <label className="festival-picker">
           <span className="visually-hidden">Festival</span>
           <select value={festivalId} onChange={(e) => setFestivalId(e.target.value)}>
-            {festivals.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.name}
-              </option>
+            {festivalsByEdition.map(([edition, list]) => (
+              <optgroup key={edition} label={edition}>
+                {list.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name}
+                  </option>
+                ))}
+              </optgroup>
             ))}
+            {comingSoon.length > 0 && (
+              <optgroup label="Coming soon" className="coming-soon">
+                {comingSoon.map((name) => (
+                  <option key={name} disabled>
+                    {name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
           </select>
         </label>
         {state.kind === 'ready' && (
@@ -214,7 +227,7 @@ export default function App() {
                   version={`${festival.id}|${state.profile.userId}|${state.profile.fetchedAt}`}
                   filename={`my-${festival.id}-lineup.png`}
                   width={festival.width}
-                  shareText={`My personal ${festival.name} lineup, made with Festify:`}
+                  shareText={`My personal ${festival.name} ${festival.edition} lineup, made with Festify:`}
                 />
               </div>
               {state.profile.warnings.length > 0 && (

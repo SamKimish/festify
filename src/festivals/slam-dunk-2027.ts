@@ -50,7 +50,8 @@ const lineup: Act[] = [
 export const slamDunk2027: ReelsFestival = {
   id: 'slam-dunk-2027',
   layout: 'reels',
-  name: 'Slam Dunk Festival 2027',
+  name: 'Slam Dunk Festival',
+  edition: '2027',
   dates: '29–30 May 2027',
   location: 'Leeds & Hatfield',
   background: 'festivals/slam-dunk-2027/background.webp',

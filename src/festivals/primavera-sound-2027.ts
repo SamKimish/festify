@@ -172,7 +172,8 @@ const lineup: Act[] = [
 export const primaveraSound2027: ColumnsFestival = {
   id: 'primavera-sound-2027',
   layout: 'columns',
-  name: 'Primavera Sound Barcelona 2027',
+  name: 'Primavera Sound Barcelona',
+  edition: '2027',
   dates: '2–6 June 2027',
   location: 'Parc del Fòrum, Barcelona',
   background: 'festivals/primavera-sound-2027/background.webp',

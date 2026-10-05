@@ -50,7 +50,10 @@ export interface FestivalTheme {
 
 interface FestivalBase {
   id: string;
+  /** Festival name without the year, e.g. "Slam Dunk Festival". */
   name: string;
+  /** Which edition this lineup is for, e.g. "2027". Groups the drop-down. */
+  edition: string;
   dates: string;
   location: string;
   /** Path (relative to the site root) of the blank poster artwork. */

@@ -228,3 +228,36 @@ main { flex: 1; padding: 24px; }
 .logo-text { display: inline-block; line-height: 1; white-space: nowrap; text-transform: uppercase; }
 .reels-empty { position: absolute; left: 25%; width: 50%; text-align: center; }
 .welcome .welcome-festivals { font-size: 15px; color: var(--muted); margin-top: -4px; }
+
+/* ---------- Festival picker groups ---------- */
+.festival-picker optgroup { font-style: normal; font-weight: 700; }
+.festival-picker optgroup.coming-soon { font-style: italic; }
+.festival-picker option { font-style: normal; font-weight: 500; }
+.festival-picker option:disabled { color: var(--muted); }
+
+/* Browsers with styleable drop-downs (Chrome 135+) get a picker matching the site;
+   everywhere else falls back to the native one with the same groups. */
+@supports (appearance: base-select) {
+  .festival-picker select,
+  .festival-picker select::picker(select) { appearance: base-select; }
+  .festival-picker select { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+  .festival-picker select::picker-icon { content: '▾'; color: var(--muted); }
+  .festival-picker select::picker(select) {
+    margin-top: 6px; padding: 6px; border: 1px solid var(--line); border-radius: 14px;
+    background: var(--surface); color: var(--text); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  }
+  .festival-picker optgroup::label,
+  .festival-picker optgroup legend { display: block; }
+  .festival-picker optgroup {
+    padding: 8px 10px 4px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
+  }
+  .festival-picker optgroup.coming-soon { text-transform: none; letter-spacing: 0; font-size: 13px; }
+  .festival-picker option {
+    padding: 8px 10px; border-radius: 8px; font-size: 15px; letter-spacing: 0; text-transform: none;
+    color: var(--text);
+  }
+  .festival-picker option:not(:disabled):hover,
+  .festival-picker option:checked { background: var(--bg); }
+  .festival-picker option:disabled { color: var(--muted); opacity: 0.6; cursor: default; }
+  .festival-picker option::checkmark { content: '*'; color: var(--accent); font-weight: 800; }
+}
