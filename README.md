@@ -18,7 +18,8 @@ become the headliners, and anyone you've never played is left off.
 - **You might like:** a toggle that adds lineup acts similar to your top artists, via Last.fm's similar-artists data,
   marked with * (`src/suggest.ts`).
 - **Your biggest clashes:** for festivals with set times (Glastonbury), pairs of your acts where every set by one
-  overlaps a set by the other by more than 5 minutes, ranked by how much you'd be giving up (`src/clashes.ts`).
+  overlaps a set by the other by more than 5 minutes, ranked by the two acts' combined position in your running
+  order (`src/clashes.ts`).
 - **Spotify playlist:** Spotify logins can turn the poster into a private playlist, in billing order
   (`src/spotify/playlist.ts`).
 

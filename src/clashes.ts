@@ -8,6 +8,9 @@ export interface Clash {
   slotB: Slot;
   /** Minutes the two sets overlap. */
   overlap: number;
+  /** Each act's position in your running order (1 = top). */
+  rankA: number;
+  rankB: number;
 }
 
 /**
@@ -20,14 +23,16 @@ const overlapOf = (x: Slot, y: Slot) =>
   x.day === y.day && x.stage !== y.stage ? Math.max(0, Math.min(x.end, y.end) - Math.max(x.start, y.start)) : 0;
 
 /**
- * The poster's worst clashes: pairs of acts where you can't see both because
- * every set by one overlaps a set by the other. Ranked by how much you like
- * the *less* loved act of the pair (that's what you'd be giving up), weighted
- * by how much of the shorter set the clash eats.
+ * The poster's biggest clashes: pairs of acts where you can't see both because
+ * every set by one overlaps a set by the other. `acts` is your running order,
+ * and a clash is as big as the two acts' combined position in it: your 5th and
+ * 6th favourites (5 + 6) clash harder than your favourite and your 50th
+ * (1 + 50). Longer overlaps break ties.
  */
 export function findClashes(acts: CuratedAct[], limit = 5): Clash[] {
+  const position = new Map(acts.map((a, i) => [a, i + 1]));
   const timed = acts.filter((a) => a.act.slots?.length);
-  const clashes: (Clash & { weight: number })[] = [];
+  const clashes: Clash[] = [];
   for (let i = 0; i < timed.length; i++) {
     for (let j = i + 1; j < timed.length; j++) {
       const A = timed[i].act.slots!;
@@ -43,15 +48,12 @@ export function findClashes(acts: CuratedAct[], limit = 5): Clash[] {
         }
       }
       if (!worst) continue;
-      const shorter = Math.min(worst.slotA.end - worst.slotA.start, worst.slotB.end - worst.slotB.start);
-      const weight = Math.min(timed[i].score, timed[j].score) * (worst.overlap / Math.max(shorter, 1));
-      clashes.push({ a: timed[i], b: timed[j], ...worst, weight });
+      clashes.push({ a: timed[i], b: timed[j], ...worst, rankA: position.get(timed[i])!, rankB: position.get(timed[j])! });
     }
   }
   return clashes
-    .sort((x, y) => y.weight - x.weight)
-    .slice(0, limit)
-    .map(({ weight: _, ...c }) => c);
+    .sort((x, y) => x.rankA + x.rankB - (y.rankA + y.rankB) || y.overlap - x.overlap)
+    .slice(0, limit);
 }
 
 /** 1500 → "01:00" */

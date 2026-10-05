@@ -104,7 +104,7 @@ export function Sidebar(props: Props) {
               {clashes.map((c) => (
                 <li key={`${c.a.act.display}|${c.b.act.display}`}>
                   <p className="clash-when">
-                    {c.slotA.day} · {c.overlap} min overlap
+                    {c.slotA.day} · {c.overlap} min overlap · your #{c.rankA} &amp; #{c.rankB}
                   </p>
                   <ClashAct act={c.a} stage={c.slotA.stage} time={fmtSlot(c.slotA.start, c.slotA.end)} onSelect={props.onSelect} />
                   <span className="clash-vs">vs</span>
